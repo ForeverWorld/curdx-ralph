@@ -22,6 +22,7 @@ CURDX Specum is a spec-driven development plugin that guides you through researc
 | `/curdx:status` | Show all specs and progress |
 | `/curdx:switch <name>` | Change active spec |
 | `/curdx:cancel` | Cancel active loop, cleanup state |
+| `/curdx:mcp-doctor` | Check/install required MCP servers |
 | `/curdx:feedback [message]` | Submit feedback or report an issue |
 | `/curdx:help` | Show this help |
 
@@ -99,6 +100,15 @@ Phase commands use the `commitSpec` setting from `.curdx-state.json` (set during
 /curdx:implement [--max-task-iterations 5]
 ```
 - `--max-task-iterations`: Max retries per task before failure (default: 5)
+
+### mcp-doctor command
+```
+/curdx:mcp-doctor [--install-missing] [--scope local|user|project] [--required a,b,c]
+```
+- `--install-missing`: Auto-install missing known MCP servers (`context7`, `chrome-devtools`)
+- Default required MCP servers: `context7`, `chrome-devtools`
+- `--scope`: MCP config scope passed to `claude mcp add` (default: `user`)
+- `--required`: Override required server list (comma-separated)
 
 ## Directory Structure
 

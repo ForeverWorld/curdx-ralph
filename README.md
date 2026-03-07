@@ -118,6 +118,7 @@ claude plugin validate .
 | `/curdx:index` | Index codebase and external resources into specs |
 | `/curdx:refactor` | Update spec docs after execution |
 | `/curdx:review-pr [aspects]` | Multi-agent PR review |
+| `/curdx:mcp-doctor` | Check/install required MCP servers (context7, chrome-devtools) |
 | `/curdx:commit` | Create commit |
 | `/curdx:commit-push-pr` | Commit, push, and open PR |
 | `/curdx:hookify` | Build behavior guard hooks from conversation analysis |
@@ -166,6 +167,31 @@ specs_dirs:
 ```
 
 ## Guardrails and Quality
+
+## MCP Setup
+
+Check MCP readiness:
+
+```bash
+bash scripts/mcp-doctor.sh
+```
+
+Auto-install missing known MCP servers:
+
+```bash
+bash scripts/mcp-doctor.sh --install-missing
+```
+
+Run via slash command:
+
+```text
+/curdx:mcp-doctor
+/curdx:mcp-doctor --install-missing --scope project
+```
+
+Default required servers:
+- `context7`
+- `chrome-devtools`
 
 ### Hook guardrails
 

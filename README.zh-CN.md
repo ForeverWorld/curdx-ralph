@@ -117,6 +117,7 @@ claude plugin validate .
 | `/curdx:index` | 索引代码与外部资源到 specs/.index |
 | `/curdx:refactor` | 执行后按顺序更新 spec 文档 |
 | `/curdx:review-pr [aspects]` | 多 Agent 进行 PR 审查 |
+| `/curdx:mcp-doctor` | 检查/安装必需 MCP（context7、chrome-devtools） |
 | `/curdx:commit` | 创建提交 |
 | `/curdx:commit-push-pr` | 提交、推送并创建 PR |
 | `/curdx:hookify` | 基于对话分析生成行为约束 hooks |
@@ -165,6 +166,31 @@ specs_dirs:
 ```
 
 ## 守护与质量
+
+## MCP 配置
+
+检查 MCP 就绪状态：
+
+```bash
+bash scripts/mcp-doctor.sh
+```
+
+自动安装缺失的已知 MCP：
+
+```bash
+bash scripts/mcp-doctor.sh --install-missing
+```
+
+也可以通过命令使用：
+
+```text
+/curdx:mcp-doctor
+/curdx:mcp-doctor --install-missing --scope project
+```
+
+默认必需 MCP：
+- `context7`
+- `chrome-devtools`
 
 ### Hook 守护
 
