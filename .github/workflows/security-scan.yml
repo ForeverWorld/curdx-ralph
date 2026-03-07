@@ -13,21 +13,60 @@ permissions:
 jobs:
   trivy-fs:
     runs-on: ubuntu-latest
+    env:
+      TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.65.0
+      TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Run Trivy vulnerability + secret scan
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+      - name: Cache Trivy DB
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln,secret
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: 1
-          format: table
-          output: trivy-results.txt
+          path: ${{ env.TRIVY_CACHE_DIR }}
+          key: trivy-db-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-${{ runner.os }}-
+
+      - name: Download Trivy DB (with retry)
+        run: |
+          set -euo pipefail
+          mkdir -p "${TRIVY_CACHE_DIR}"
+
+          retry() {
+            local attempts="$1"
+            shift
+            local n=1
+            until "$@"; do
+              if [ "$n" -ge "$attempts" ]; then
+                return 1
+              fi
+              n=$((n + 1))
+              sleep $((n * 5))
+            done
+          }
+
+          retry 3 docker run --rm \
+            -v "${TRIVY_CACHE_DIR}:/tmp/trivy-cache" \
+            "${TRIVY_IMAGE}" image --download-db-only --cache-dir /tmp/trivy-cache
+
+      - name: Run Trivy vulnerability + secret scan
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" \
+            -v "${TRIVY_CACHE_DIR}:/tmp/trivy-cache" \
+            -w /work \
+            "${TRIVY_IMAGE}" fs \
+            --cache-dir /tmp/trivy-cache \
+            --skip-db-update \
+            --scanners vuln,secret \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 1 \
+            --format table \
+            --output trivy-results.txt \
+            .
 
       - name: Publish results to summary
         if: always()
