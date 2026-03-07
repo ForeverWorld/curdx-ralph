@@ -11,7 +11,7 @@ metadata:
   author: terminal-skills
   version: "1.0.0"
   category: development
-  tags: ["nextjs", "react", "full-stack", "ssr", "server-components"]
+  tags: nextjs,react,full-stack,ssr,server-components
 ---
 
 # Next.js

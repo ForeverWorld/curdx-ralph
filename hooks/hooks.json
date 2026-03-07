@@ -42,7 +42,7 @@
         ]
       },
       {
-        "matcher": "Bash|WebSearch|WebFetch|EnterPlanMode|ExitPlanMode",
+        "matcher": "Bash|WebSearch|WebFetch|EnterPlanMode|ExitPlanMode|Grep|Task|TaskCreate|TaskUpdate",
         "hooks": [
           {
             "type": "command",

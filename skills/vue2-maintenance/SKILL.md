@@ -1,6 +1,11 @@
 ---
 name: vue2-maintenance
 description: Use when maintaining legacy Vue 2 codebases (including Vue 2.7), fixing Vue2-specific issues, or preparing incremental migration plans toward Vue 3.
+license: MIT
+compatibility: Claude Code
+metadata:
+  author: curdx
+  maintainer: curdx
 ---
 
 # Vue 2 Maintenance

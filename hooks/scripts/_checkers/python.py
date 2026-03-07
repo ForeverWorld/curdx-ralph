@@ -12,7 +12,15 @@ from _util import check_file_length
 
 def check_python(file_path: Path) -> tuple[int, str]:
     """Check Python file with ruff. Returns (0, reason)."""
-    if "test_" in file_path.name or "spec" in file_path.name:
+    name = file_path.name.lower()
+    if (
+        name.startswith("test_")
+        or name.endswith("_test.py")
+        or name.startswith("spec_")
+        or name.endswith("_spec.py")
+        or ".test." in name
+        or ".spec." in name
+    ):
         return 0, ""
 
     length_warning = check_file_length(file_path)

@@ -3,6 +3,11 @@ name: interview-framework
 description: Adaptive brainstorming-style dialogue for all spec phases (Understand, Propose Approaches, Confirm & Store)
 version: 0.1.0
 user-invocable: false
+license: MIT
+compatibility: Claude Code
+metadata:
+  author: curdx
+  maintainer: curdx
 ---
 
 # Interview Framework

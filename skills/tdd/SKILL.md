@@ -2,6 +2,11 @@
 name: tdd
 description: Test-Driven Development discipline — Red-Green-Refactor cycle
 trigger: when writing code that should be test-driven, or when TDD Guard is active
+license: MIT
+compatibility: Claude Code
+metadata:
+  author: curdx
+  maintainer: curdx
 ---
 
 # TDD Skill — Red-Green-Refactor

@@ -1,6 +1,11 @@
 ---
 name: echarts-visualization
 description: Use when building or debugging Apache ECharts charts in web apps (Vue/React/TS), including option design, performance tuning, interactions, and responsive behavior.
+license: MIT
+compatibility: Claude Code
+metadata:
+  author: curdx
+  maintainer: curdx
 ---
 
 # ECharts Visualization

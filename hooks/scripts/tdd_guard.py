@@ -175,7 +175,10 @@ def _handle_session_start(hook_data: dict) -> int:
 
 def _handle_user_prompt(hook_data: dict) -> int:
     """UserPromptSubmit: handle 'tdd on' / 'tdd off' commands."""
-    user_input = hook_data.get("user_input", "").strip().lower()
+    user_input = (
+        str(hook_data.get("user_prompt", "")).strip()
+        or str(hook_data.get("user_input", "")).strip()
+    ).lower()
 
     if user_input in ("tdd on", "tdd-guard on", "tdd guard on"):
         _set_guard_enabled(True)
@@ -288,9 +291,14 @@ def main() -> int:
 
     # Also check for event field patterns
     if not hook_name:
-        if "session_id" in hook_data and "tool_name" not in hook_data and "user_input" not in hook_data:
+        if (
+            "session_id" in hook_data
+            and "tool_name" not in hook_data
+            and "user_input" not in hook_data
+            and "user_prompt" not in hook_data
+        ):
             hook_name = "SessionStart"
-        elif "user_input" in hook_data:
+        elif "user_input" in hook_data or "user_prompt" in hook_data:
             hook_name = "UserPromptSubmit"
         elif "tool_name" in hook_data:
             hook_name = "PreToolUse"

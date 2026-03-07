@@ -5,20 +5,12 @@ description: |
   It provides auto-configuration, embedded servers, and opinionated defaults for REST APIs,
   data access with JPA, security, and monitoring via Actuator.
 license: Apache-2.0
-compatibility:
-  - java >= 17
-  - maven or gradle
+compatibility: java >= 17; maven or gradle
 metadata:
   author: terminal-skills
   version: 1.0.0
   category: development
-  tags:
-    - java
-    - spring
-    - rest
-    - jpa
-    - enterprise
-    - api
+  tags: java,spring,rest,jpa,enterprise,api
 ---
 
 # Spring Boot

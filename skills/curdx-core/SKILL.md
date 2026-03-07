@@ -1,7 +1,12 @@
 ---
-name: curdx
+name: curdx-core
 description: This skill should be used when the user asks about "curdx arguments", "quick mode", "commit spec", "max iterations", "curdx state file", "execution modes", "curdx loop integration", or needs guidance on common CURDX plugin arguments and state management patterns.
 version: 0.1.0
+license: MIT
+compatibility: Claude Code
+metadata:
+  author: curdx
+  maintainer: curdx
 ---
 
 # CURDX Core

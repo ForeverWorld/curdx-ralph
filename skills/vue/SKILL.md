@@ -5,20 +5,12 @@ description: |
   the Composition API with reactive refs and computed values, single-file components,
   and an approachable learning curve with powerful scaling capabilities.
 license: Apache-2.0
-compatibility:
-  - node >= 18
-  - npm or yarn or pnpm
+compatibility: node >= 18; npm or yarn or pnpm
 metadata:
   author: terminal-skills
   version: 1.0.0
   category: development
-  tags:
-    - javascript
-    - typescript
-    - frontend
-    - reactive
-    - components
-    - spa
+  tags: javascript,typescript,frontend,reactive,components,spa
 ---
 
 # Vue

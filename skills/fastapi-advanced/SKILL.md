@@ -10,12 +10,7 @@ metadata:
   author: terminal-skills
   version: 1.0.0
   category: development
-  tags:
-    - fastapi
-    - python
-    - api
-    - async
-    - production
+  tags: fastapi,python,api,async,production
 ---
 
 # FastAPI (Advanced)

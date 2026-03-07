@@ -91,16 +91,21 @@ def extract_frontmatter(content: str) -> tuple[Dict[str, Any], str]:
 
     Supports multi-line dictionary items in lists by preserving indentation.
     """
-    if not content.startswith('---'):
+    lines_raw = content.splitlines()
+    if not lines_raw or lines_raw[0].strip() != '---':
         return {}, content
 
-    # Split on --- markers
-    parts = content.split('---', 2)
-    if len(parts) < 3:
+    end_idx = None
+    for idx in range(1, len(lines_raw)):
+        if lines_raw[idx].strip() == '---':
+            end_idx = idx
+            break
+
+    if end_idx is None:
         return {}, content
 
-    frontmatter_text = parts[1]
-    message = parts[2].strip()
+    frontmatter_text = '\n'.join(lines_raw[1:end_idx])
+    message = '\n'.join(lines_raw[end_idx + 1:]).strip()
 
     # Simple YAML parser that handles indented list items
     frontmatter = {}

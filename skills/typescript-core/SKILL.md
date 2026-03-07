@@ -1,6 +1,11 @@
 ---
 name: typescript-core
 description: Use when working on TypeScript or TSX code, tsconfig settings, type errors, or API contracts. Focus on strict typing, safe refactors, and pragmatic type design.
+license: MIT
+compatibility: Claude Code
+metadata:
+  author: curdx
+  maintainer: curdx
 ---
 
 # TypeScript Core

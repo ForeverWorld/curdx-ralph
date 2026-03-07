@@ -10,7 +10,7 @@ metadata:
   author: terminal-skills
   version: "1.0.0"
   category: development
-  tags: ["vitest", "testing", "unit-testing", "vite", "jest-alternative"]
+  tags: vitest,testing,unit-testing,vite,jest-alternative
 ---
 
 # Vitest

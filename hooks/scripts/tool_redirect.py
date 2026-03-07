@@ -53,6 +53,21 @@ CODE_PATTERNS = [
     "interface ",
 ]
 
+TASK_TOOL_NAMES = {"Task", "TaskCreate", "TaskUpdate"}
+
+
+def _task_subagent_type(tool_input: dict[str, object]) -> str:
+    """Extract task subagent type from known payload keys."""
+    for key in ("subagent_type", "subagentType", "agent", "task_type", "type"):
+        value = tool_input.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def _is_explore_subagent(tool_input: dict[str, object]) -> bool:
+    return _task_subagent_type(tool_input).lower() == "explore"
+
 
 def is_semantic_pattern(pattern: str) -> bool:
     """Check if a pattern appears to be a semantic/intent-based search.
@@ -89,7 +104,7 @@ HINTS: dict[str, dict] = {
         "alternative": "Direct tool calls avoid sub-agent context cost",
         "example": "Read/Grep/Glob for exploration, TaskCreate for tracking",
         "condition": lambda data: (
-            data.get("tool_input", {}).get("subagent_type", "")
+            _task_subagent_type(data.get("tool_input", {}))
             not in (
                 "Explore",
                 "pilot:plan-reviewer",
@@ -128,7 +143,8 @@ BLOCKS: dict[str, dict] = {
         "alternative": "Do planning work directly with Read, Grep, Glob tools. Use /spec for structured planning.",
         "example": "Read files directly, use AskUserQuestion for decisions, write plan to file",
         "condition": lambda data: (
-            isinstance(data.get("tool_input"), dict) and data["tool_input"].get("subagent_type") == "Plan"
+            isinstance(data.get("tool_input"), dict)
+            and _task_subagent_type(data["tool_input"]) == "Plan"
         ),
     },
 }
@@ -171,24 +187,25 @@ def run_tool_redirect() -> int:
         tool_input = hook_data.get("tool_input", {}) if isinstance(hook_data.get("tool_input"), dict) else {}
         session_id = str(hook_data.get("session_id", "")).strip()
         t.set(tool=tool_name, session_id=session_id)
+        tool_key = "Task" if tool_name in TASK_TOOL_NAMES else tool_name
 
-        if tool_name == "Task" and tool_input.get("subagent_type") == "Explore":
+        if tool_key == "Task" and _is_explore_subagent(tool_input):
             t.set(message="Explore subagent — hint vexor search", decision="hint")
             return hint(EXPLORE_HINT)
 
-        if tool_name in BLOCKS:
-            redirect = BLOCKS[tool_name]
+        if tool_key in BLOCKS:
+            redirect = BLOCKS[tool_key]
             condition = redirect.get("condition")
             if condition is None or condition(hook_data):
                 t.set(message=f"blocked: {redirect['message']}", decision="deny")
                 return block(redirect)
 
-        if tool_name in HINTS:
-            redirect = HINTS[tool_name]
+        if tool_key in HINTS:
+            redirect = HINTS[tool_key]
             condition = redirect.get("condition")
             if condition is None or condition(hook_data):
                 pattern = None
-                if tool_name == "Grep":
+                if tool_key == "Grep":
                     pattern = tool_input.get("pattern", "") if isinstance(tool_input, dict) else ""
                 t.set(message=f"hint: {redirect['message']}", decision="hint")
                 return hint(redirect, pattern)
