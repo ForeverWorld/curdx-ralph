@@ -63,6 +63,41 @@ if [ ! -f "$STATE_FILE" ]; then
     exit 0
 fi
 
+curdx_has_completion_signal() {
+    local text="$1"
+    [ -n "$text" ] || return 1
+    while IFS= read -r line; do
+        local trimmed
+        trimmed=$(printf "%s" "$line" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+        if [ "$trimmed" = "ALL_TASKS_COMPLETE" ]; then
+            return 0
+        fi
+    done <<< "$text"
+    return 1
+}
+
+curdx_mark_completion_side_effects() {
+    # Update epic state if this spec belongs to an epic.
+    local epic_name_val current_epic_file epic_state_file tmp_file
+    epic_name_val=$(jq -r '.epicName // empty' "$STATE_FILE" 2>/dev/null || true)
+    current_epic_file="$CWD/specs/.current-epic"
+    if [ -n "$epic_name_val" ] && [ -f "$current_epic_file" ]; then
+        epic_state_file="$CWD/specs/_epics/$epic_name_val/.epic-state.json"
+        if [ -f "$epic_state_file" ]; then
+            tmp_file=$(mktemp "${epic_state_file}.tmp.XXXXXX")
+            if jq --arg spec "$SPEC_NAME" '
+              .specs |= map(if .name == $spec then .status = "completed" else . end)
+            ' "$epic_state_file" > "$tmp_file"; then
+                mv "$tmp_file" "$epic_state_file"
+            else
+                rm -f "$tmp_file"
+            fi
+            echo "[curdx] Updated epic '$epic_name_val': spec '$SPEC_NAME' marked completed" >&2
+        fi
+    fi
+    "$SCRIPT_DIR/update-spec-index.sh" --quiet 2>/dev/null || true
+}
+
 # Race condition safeguard: if state file was modified in last 2 seconds, wait briefly
 # This allows the coordinator to finish writing before we read
 if command -v stat >/dev/null 2>&1; then
@@ -80,57 +115,24 @@ if command -v stat >/dev/null 2>&1; then
     fi
 fi
 
-# Check for ALL_TASKS_COMPLETE in transcript (backup termination detection)
-# Use specific pattern to avoid false positives from code/comments containing the phrase
+# Check completion signal from latest assistant turn first.
+# This avoids transcript-wide false positives when prompts mention ALL_TASKS_COMPLETE.
+LAST_ASSISTANT_MESSAGE=$(echo "$INPUT" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)
+if curdx_has_completion_signal "$LAST_ASSISTANT_MESSAGE"; then
+    echo "[curdx] ALL_TASKS_COMPLETE detected in last_assistant_message" >&2
+    curdx_log "stop-watcher" "Stop" "INFO" "ALL_TASKS_COMPLETE detected" "spec=$SPEC_NAME" "source=last_assistant_message" "decision=allow"
+    curdx_mark_completion_side_effects
+    exit 0
+fi
+
+# Fallback for older clients without last_assistant_message.
+# Match only exact standalone signal lines to avoid broad false positives.
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
 if [ -n "$TRANSCRIPT_PATH" ] && [ -f "$TRANSCRIPT_PATH" ]; then
-    # Primary: 500 lines covers most sessions for reliable detection
-    if tail -500 "$TRANSCRIPT_PATH" 2>/dev/null | grep -qE '(^|\W)ALL_TASKS_COMPLETE(\W|$)'; then
-        echo "[curdx] ALL_TASKS_COMPLETE detected in transcript" >&2
-        curdx_log "stop-watcher" "Stop" "INFO" "ALL_TASKS_COMPLETE detected" "spec=$SPEC_NAME" "decision=allow"
-        # Note: State file cleanup is handled by the coordinator (implement.md Section 10)
-        # Do not delete here to avoid race condition
-        # Update epic state if this spec belongs to an epic
-        EPIC_NAME_VAL=$(jq -r '.epicName // empty' "$STATE_FILE" 2>/dev/null || true)
-        CURRENT_EPIC_FILE="$CWD/specs/.current-epic"
-        if [ -n "$EPIC_NAME_VAL" ] && [ -f "$CURRENT_EPIC_FILE" ]; then
-            EPIC_STATE_FILE="$CWD/specs/_epics/$EPIC_NAME_VAL/.epic-state.json"
-            if [ -f "$EPIC_STATE_FILE" ]; then
-                TMP_FILE=$(mktemp "${EPIC_STATE_FILE}.tmp.XXXXXX")
-                if jq --arg spec "$SPEC_NAME" '
-                  .specs |= map(if .name == $spec then .status = "completed" else . end)
-                ' "$EPIC_STATE_FILE" > "$TMP_FILE"; then
-                    mv "$TMP_FILE" "$EPIC_STATE_FILE"
-                else
-                    rm -f "$TMP_FILE"
-                fi
-                echo "[curdx] Updated epic '$EPIC_NAME_VAL': spec '$SPEC_NAME' marked completed" >&2
-            fi
-        fi
-        "$SCRIPT_DIR/update-spec-index.sh" --quiet 2>/dev/null || true
-        exit 0
-    fi
-    # Fallback: check last 20 lines for edge cases (very recent signal)
-    if tail -20 "$TRANSCRIPT_PATH" 2>/dev/null | grep -qE '(^|\W)ALL_TASKS_COMPLETE(\W|$)'; then
-        echo "[curdx] ALL_TASKS_COMPLETE detected in transcript (tail-end)" >&2
-        # Update epic state if this spec belongs to an epic
-        EPIC_NAME_VAL=$(jq -r '.epicName // empty' "$STATE_FILE" 2>/dev/null || true)
-        CURRENT_EPIC_FILE="$CWD/specs/.current-epic"
-        if [ -n "$EPIC_NAME_VAL" ] && [ -f "$CURRENT_EPIC_FILE" ]; then
-            EPIC_STATE_FILE="$CWD/specs/_epics/$EPIC_NAME_VAL/.epic-state.json"
-            if [ -f "$EPIC_STATE_FILE" ]; then
-                TMP_FILE=$(mktemp "${EPIC_STATE_FILE}.tmp.XXXXXX")
-                if jq --arg spec "$SPEC_NAME" '
-                  .specs |= map(if .name == $spec then .status = "completed" else . end)
-                ' "$EPIC_STATE_FILE" > "$TMP_FILE"; then
-                    mv "$TMP_FILE" "$EPIC_STATE_FILE"
-                else
-                    rm -f "$TMP_FILE"
-                fi
-                echo "[curdx] Updated epic '$EPIC_NAME_VAL': spec '$SPEC_NAME' marked completed" >&2
-            fi
-        fi
-        "$SCRIPT_DIR/update-spec-index.sh" --quiet 2>/dev/null || true
+    if tail -120 "$TRANSCRIPT_PATH" 2>/dev/null | grep -qE '^[[:space:]]*ALL_TASKS_COMPLETE[[:space:]]*$'; then
+        echo "[curdx] ALL_TASKS_COMPLETE detected in transcript (strict line match)" >&2
+        curdx_log "stop-watcher" "Stop" "INFO" "ALL_TASKS_COMPLETE detected" "spec=$SPEC_NAME" "source=transcript_tail" "decision=allow"
+        curdx_mark_completion_side_effects
         exit 0
     fi
 fi

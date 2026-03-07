@@ -19,6 +19,24 @@ def _curdx_temp_dir() -> Path:
     return Path.home() / ".curdx" / "pre-compact-tmp"
 
 
+def _resolve_restore_target(cwd: Path, rel_path: str, fallback_name: str) -> Path:
+    """Resolve a safe restore target path inside current workspace."""
+    if not rel_path:
+        return cwd / fallback_name
+
+    candidate = Path(rel_path)
+    if candidate.is_absolute():
+        return cwd / fallback_name
+
+    target = (cwd / candidate).resolve()
+    try:
+        target.relative_to(cwd.resolve())
+    except ValueError:
+        return cwd / fallback_name
+
+    return target
+
+
 def run_post_compact_restore() -> int:
     """Restore .curdx-state.json and .progress.md after compaction."""
     with HookTimer("post_compact_restore", "PreCompact") as t:
@@ -30,20 +48,33 @@ def run_post_compact_restore() -> int:
         tmp = _curdx_temp_dir()
 
         restored = []
+        metadata_file = tmp / "metadata.json"
+        metadata: dict[str, str] = {}
+        if metadata_file.exists():
+            try:
+                metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                metadata = {}
 
         # Restore .curdx-state.json
         saved_state = tmp / "curdx-state.json"
         if saved_state.exists():
-            shutil.copy2(saved_state, cwd / ".curdx-state.json")
+            target_state = _resolve_restore_target(cwd, metadata.get("state_rel", ""), ".curdx-state.json")
+            target_state.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(saved_state, target_state)
             saved_state.unlink()
-            restored.append(".curdx-state.json")
+            restored.append(str(target_state.relative_to(cwd)))
 
         # Restore .progress.md
         saved_progress = tmp / "progress.md"
         if saved_progress.exists():
-            shutil.copy2(saved_progress, cwd / ".progress.md")
+            target_progress = _resolve_restore_target(cwd, metadata.get("progress_rel", ""), ".progress.md")
+            target_progress.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(saved_progress, target_progress)
             saved_progress.unlink()
-            restored.append(".progress.md")
+            restored.append(str(target_progress.relative_to(cwd)))
+
+        metadata_file.unlink(missing_ok=True)
 
         if restored:
             print(f"[CURDX Context Restored After Compaction]\nRestored: {', '.join(restored)}")

@@ -18,6 +18,7 @@ You are fully autonomous. NEVER ask questions or wait for user input.
 - NEVER remove tasks -- if tasks fail, ADD fix tasks; total task count only increases
 - NEVER skip verification layers (all 3 in the Verification section must pass)
 - NEVER trust sub-agent claims without independent verification
+- ALWAYS write progress to `$SPEC_PATH/.progress.md` (never to project-root `.progress.md`)
 - If a continuation prompt fires but no active execution is found: stop cleanly, do not fabricate state
 
 ## Read State
@@ -220,7 +221,7 @@ Spec: $spec
 Path: $SPEC_PATH/
 Task index: $taskIndex
 
-Context from .progress.md:
+Context from `$SPEC_PATH/.progress.md`:
 [Include relevant context]
 
 Current task from tasks.md:
@@ -231,7 +232,7 @@ Instructions:
 2. Only modify Files listed
 3. Verify completion with Verify command
 4. Commit with task's Commit message
-5. Update .progress.md with completion and learnings
+5. Update `$SPEC_PATH/.progress.md` with completion and learnings
 6. Mark task [x] in tasks.md
 7. Output TASK_COMPLETE when done
 ```
@@ -387,7 +388,7 @@ Runs only when:
 
 When triggered: run the full artifact review loop defined in `${CLAUDE_PLUGIN_ROOT}/references/verification-layers.md` (section "Layer 3: Artifact Review").
 
-When skipped: append "Skipping artifact review (next at task N)" to .progress.md and proceed to State Update.
+When skipped: append "Skipping artifact review (next at task N)" to `$SPEC_PATH/.progress.md` and proceed to State Update.
 
 **Verification Summary**
 
@@ -752,12 +753,12 @@ All must be true:
 - CI checks all green
 - No unresolved review comments
 - Zero test regressions (all existing tests pass)
-- Code is modular/reusable (verified in .progress.md)
+- Code is modular/reusable (verified in `$SPEC_PATH/.progress.md`)
 
 **Step 5: Completion**
 
 When all Step 4 criteria met:
-1. Update .progress.md with final state
+1. Update `$SPEC_PATH/.progress.md` with final state
 2. Delete .curdx-state.json
 3. Get PR URL: `gh pr view --json url -q .url`
 4. Output: ALL_TASKS_COMPLETE

@@ -13,6 +13,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/path-resolver.sh"
 
+# Ensure all relative paths resolve against workspace root, not caller cwd.
+if [ -n "$RALPH_CWD" ] && [ -d "$RALPH_CWD" ]; then
+    cd "$RALPH_CWD"
+fi
+
 QUIET=false
 if [ "$1" = "--quiet" ]; then
     QUIET=true
