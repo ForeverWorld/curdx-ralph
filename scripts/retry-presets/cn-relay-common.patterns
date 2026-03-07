@@ -14,5 +14,6 @@ non_retriable: 鉴权失败
 non_retriable: 密钥无效
 non_retriable: 权限不足
 non_retriable: 参数错误
+non_retriable: 账户余额不足
 non_retriable: 余额不足
 non_retriable: 账户已禁用

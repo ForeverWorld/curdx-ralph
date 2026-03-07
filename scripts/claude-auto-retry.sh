@@ -216,7 +216,7 @@ mkdir -p "$LOG_DIR"
 RUN_LOG="$LOG_DIR/loop.log"
 
 TRANSIENT_REGEX='relay: 当前模型负载过高|overloaded|server_error|rate[_ -]?limit|429|500|502|503|504|529|connection error|timed out|timeout|request was aborted|socket hang up|ECONN|ENOTFOUND|EAI_AGAIN'
-NON_RETRIABLE_REGEX='access denied|invalid user|authentication|api key|auth token|authorization|permission denied|forbidden|401|403|invalid[_ -]?request|unsupported'
+NON_RETRIABLE_REGEX='access denied|invalid user|authentication|api key|auth token|authorization|permission denied|forbidden|401|403|402|invalid[_ -]?request|unsupported|insufficient quota|insufficient balance|balance insufficient|billing inactive|payment required|account suspended|tenant disabled|账户余额不足|余额不足|账户已禁用|账号已禁用'
 
 if [[ -n "$EXTRA_TRANSIENT_REGEX" ]]; then
     TRANSIENT_REGEX="${TRANSIENT_REGEX}|${EXTRA_TRANSIENT_REGEX}"
