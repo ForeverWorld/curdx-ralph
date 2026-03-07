@@ -39,6 +39,22 @@ It combines:
 
 ## Installation
 
+### Option A: Install from Marketplace (like superpowers style)
+
+```text
+/plugin marketplace add ForeverWorld/curdx-ralph
+/plugin install curdx@curdx-marketplace
+```
+
+CLI equivalent:
+
+```bash
+claude plugin marketplace add ForeverWorld/curdx-ralph
+claude plugin install curdx@curdx-marketplace
+```
+
+### Option B: Local plugin directory
+
 ### 1. Clone the repository
 
 ```bash

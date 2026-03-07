@@ -1,0 +1,17 @@
+{
+  "name": "curdx-marketplace",
+  "description": "Marketplace for the CURDX Claude Code plugin.",
+  "metadata": {
+    "description": "Official CURDX plugin distribution channel."
+  },
+  "owner": {
+    "name": "ForeverWorld"
+  },
+  "plugins": [
+    {
+      "name": "curdx",
+      "source": "./.",
+      "description": "Spec-driven engineering workflow plugin for Claude Code with hooks, agents, and MCP-ready automation."
+    }
+  ]
+}
