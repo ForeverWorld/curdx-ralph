@@ -49,7 +49,7 @@ class CompactStatePathTest(unittest.TestCase):
             pre_result = _run_python("hooks/scripts/pre_compact.py", payload, env=env, cwd=workspace)
             self.assertEqual(pre_result.returncode, 0, msg=pre_result.stderr)
 
-            backup_dir = Path(env["HOME"]) / ".curdx" / "pre-compact-tmp"
+            backup_dir = Path(env["HOME"]) / ".curdx" / "pre-compact-tmp" / "compact-paths"
             metadata_path = backup_dir / "metadata.json"
             self.assertTrue((backup_dir / "curdx-state.json").exists())
             self.assertTrue((backup_dir / "progress.md").exists())
@@ -69,6 +69,49 @@ class CompactStatePathTest(unittest.TestCase):
             self.assertTrue(progress_path.exists())
             self.assertFalse((workspace / ".curdx-state.json").exists())
             self.assertFalse((workspace / ".progress.md").exists())
+
+    def test_pre_compact_backup_is_isolated_by_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            workspace = tmp_root / "repo"
+            spec_dir = workspace / "specs" / "demo-spec"
+            spec_dir.mkdir(parents=True)
+            (workspace / "specs" / ".current-spec").write_text("demo-spec\n", encoding="utf-8")
+
+            state_path = spec_dir / ".curdx-state.json"
+            progress_path = spec_dir / ".progress.md"
+
+            env = os.environ.copy()
+            env["HOME"] = str(tmp_root / "home")
+            env["CURDX_HOOK_LOG"] = "0"
+
+            state_path.write_text('{"tag":"A"}', encoding="utf-8")
+            progress_path.write_text("progress-A\n", encoding="utf-8")
+            result_a = _run_python("hooks/scripts/pre_compact.py", {"session_id": "session-A"}, env=env, cwd=workspace)
+            self.assertEqual(result_a.returncode, 0, msg=result_a.stderr)
+
+            state_path.write_text('{"tag":"B"}', encoding="utf-8")
+            progress_path.write_text("progress-B\n", encoding="utf-8")
+            result_b = _run_python("hooks/scripts/pre_compact.py", {"session_id": "session-B"}, env=env, cwd=workspace)
+            self.assertEqual(result_b.returncode, 0, msg=result_b.stderr)
+
+            backup_root = Path(env["HOME"]) / ".curdx" / "pre-compact-tmp"
+            session_a_state = backup_root / "session-A" / "curdx-state.json"
+            session_b_state = backup_root / "session-B" / "curdx-state.json"
+            self.assertEqual(json.loads(session_a_state.read_text(encoding="utf-8")).get("tag"), "A")
+            self.assertEqual(json.loads(session_b_state.read_text(encoding="utf-8")).get("tag"), "B")
+
+            state_path.unlink()
+            progress_path.unlink()
+            restore_a = _run_python(
+                "hooks/scripts/post_compact_restore.py",
+                {"session_id": "session-A"},
+                env=env,
+                cwd=workspace,
+            )
+            self.assertEqual(restore_a.returncode, 0, msg=restore_a.stderr)
+            self.assertEqual(json.loads(state_path.read_text(encoding="utf-8")).get("tag"), "A")
+            self.assertEqual(progress_path.read_text(encoding="utf-8"), "progress-A\n")
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ for post-compaction restoration.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -16,9 +17,15 @@ sys.path.insert(0, str(Path(__file__).parent))
 from _util import HookTimer, read_hook_stdin
 
 
-def _curdx_temp_dir() -> Path:
-    """Get temp directory for pre-compact state."""
-    tmp = Path.home() / ".curdx" / "pre-compact-tmp"
+def _sanitize_session_id(session_id: str) -> str:
+    """Sanitize session id for safe directory names."""
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", session_id).strip("._")
+    return safe or "default"
+
+
+def _curdx_temp_dir(session_id: str) -> Path:
+    """Get session-scoped temp directory for pre-compact state."""
+    tmp = Path.home() / ".curdx" / "pre-compact-tmp" / _sanitize_session_id(session_id)
     tmp.mkdir(parents=True, exist_ok=True)
     return tmp
 
@@ -67,10 +74,12 @@ def run_pre_compact() -> int:
     with HookTimer("pre_compact", "PreCompact") as t:
         hook_data = read_hook_stdin()
         session_id = str(hook_data.get("session_id", "")).strip()
+        if not session_id:
+            session_id = "default"
         if session_id:
             t.set(session_id=session_id)
         cwd = Path.cwd()
-        tmp = _curdx_temp_dir()
+        tmp = _curdx_temp_dir(session_id)
 
         # Clear stale backup artifacts from prior runs.
         for name in ("curdx-state.json", "progress.md", "metadata.json"):

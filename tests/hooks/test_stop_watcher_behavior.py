@@ -156,7 +156,7 @@ class StopWatcherBehaviorTest(unittest.TestCase):
             payload = json.loads(result.stdout)
             self.assertEqual(payload["decision"], "block")
 
-    def test_allows_stop_when_last_assistant_message_has_exact_signal(self) -> None:
+    def test_blocks_stop_when_last_assistant_message_has_signal_but_tasks_incomplete(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
             workspace, spec_dir = _prepare_workspace(tmp_root)
@@ -176,6 +176,10 @@ class StopWatcherBehaviorTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
+            (spec_dir / "tasks.md").write_text(
+                "- [x] 1.1 done\n- [ ] 1.2 in progress\n- [ ] 1.3 pending\n",
+                encoding="utf-8",
+            )
             old = time.time() - 5
             os.utime(state_file, (old, old))
 
@@ -186,6 +190,52 @@ class StopWatcherBehaviorTest(unittest.TestCase):
                 {
                     "cwd": str(workspace),
                     "session_id": "stop-last-assistant",
+                    "last_assistant_message": "ALL_TASKS_COMPLETE\nPR: https://example.com/pr/1",
+                    "stop_hook_active": False,
+                },
+                env,
+                cwd=workspace,
+            )
+
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertTrue(result.stdout.strip())
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["decision"], "block")
+
+    def test_allows_stop_when_last_assistant_message_has_signal_and_tasks_complete(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            workspace, spec_dir = _prepare_workspace(tmp_root)
+            state_file = spec_dir / ".curdx-state.json"
+            state_file.write_text(
+                json.dumps(
+                    {
+                        "phase": "execution",
+                        "quickMode": False,
+                        "taskIndex": 3,
+                        "totalTasks": 3,
+                        "taskIteration": 1,
+                        "globalIteration": 2,
+                        "maxGlobalIterations": 100,
+                    },
+                    ensure_ascii=True,
+                ),
+                encoding="utf-8",
+            )
+            (spec_dir / "tasks.md").write_text(
+                "- [x] 1.1 done\n- [x] 1.2 done\n- [x] 1.3 done\n",
+                encoding="utf-8",
+            )
+            old = time.time() - 5
+            os.utime(state_file, (old, old))
+
+            env = os.environ.copy()
+            env["HOME"] = str(tmp_root / "home")
+            env["CURDX_HOOK_LOG"] = "0"
+            result = _run_stop_watcher(
+                {
+                    "cwd": str(workspace),
+                    "session_id": "stop-last-assistant-complete",
                     "last_assistant_message": "ALL_TASKS_COMPLETE\nPR: https://example.com/pr/1",
                     "stop_hook_active": False,
                 },

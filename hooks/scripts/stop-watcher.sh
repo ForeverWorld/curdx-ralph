@@ -98,6 +98,17 @@ curdx_mark_completion_side_effects() {
     "$SCRIPT_DIR/update-spec-index.sh" --quiet 2>/dev/null || true
 }
 
+curdx_count_unchecked_tasks() {
+    local tasks_file="$1"
+    if [ ! -f "$tasks_file" ]; then
+        echo "0"
+        return 0
+    fi
+    local unchecked
+    unchecked=$(grep -c '^\s*- \[ \]' "$tasks_file" 2>/dev/null || true)
+    echo "${unchecked:-0}"
+}
+
 # Race condition safeguard: if state file was modified in last 2 seconds, wait briefly
 # This allows the coordinator to finish writing before we read
 if command -v stat >/dev/null 2>&1; then
@@ -115,25 +126,25 @@ if command -v stat >/dev/null 2>&1; then
     fi
 fi
 
-# Check completion signal from latest assistant turn first.
-# This avoids transcript-wide false positives when prompts mention ALL_TASKS_COMPLETE.
+# Gather completion signal candidates first, but do not allow immediately.
+# We validate against state/tasks after loading .curdx-state.json.
+HAS_COMPLETION_SIGNAL="false"
+SIGNAL_SOURCE=""
 LAST_ASSISTANT_MESSAGE=$(echo "$INPUT" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)
 if curdx_has_completion_signal "$LAST_ASSISTANT_MESSAGE"; then
-    echo "[curdx] ALL_TASKS_COMPLETE detected in last_assistant_message" >&2
-    curdx_log "stop-watcher" "Stop" "INFO" "ALL_TASKS_COMPLETE detected" "spec=$SPEC_NAME" "source=last_assistant_message" "decision=allow"
-    curdx_mark_completion_side_effects
-    exit 0
+    HAS_COMPLETION_SIGNAL="true"
+    SIGNAL_SOURCE="last_assistant_message"
 fi
 
 # Fallback for older clients without last_assistant_message.
 # Match only exact standalone signal lines to avoid broad false positives.
-TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
-if [ -n "$TRANSCRIPT_PATH" ] && [ -f "$TRANSCRIPT_PATH" ]; then
-    if tail -120 "$TRANSCRIPT_PATH" 2>/dev/null | grep -qE '^[[:space:]]*ALL_TASKS_COMPLETE[[:space:]]*$'; then
-        echo "[curdx] ALL_TASKS_COMPLETE detected in transcript (strict line match)" >&2
-        curdx_log "stop-watcher" "Stop" "INFO" "ALL_TASKS_COMPLETE detected" "spec=$SPEC_NAME" "source=transcript_tail" "decision=allow"
-        curdx_mark_completion_side_effects
-        exit 0
+if [ "$HAS_COMPLETION_SIGNAL" != "true" ]; then
+    TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
+    if [ -n "$TRANSCRIPT_PATH" ] && [ -f "$TRANSCRIPT_PATH" ]; then
+        if tail -120 "$TRANSCRIPT_PATH" 2>/dev/null | grep -qE '^[[:space:]]*ALL_TASKS_COMPLETE[[:space:]]*$'; then
+            HAS_COMPLETION_SIGNAL="true"
+            SIGNAL_SOURCE="transcript_tail"
+        fi
     fi
 fi
 
@@ -210,6 +221,20 @@ fi
 # Log current state
 if [ "$PHASE" = "execution" ]; then
     echo "[curdx] Session stopped during spec: $SPEC_NAME | Task: $((TASK_INDEX + 1))/$TOTAL_TASKS | Attempt: $TASK_ITERATION" >&2
+fi
+
+# Completion signal must be consistent with state/tasks; otherwise ignore it.
+if [ "$HAS_COMPLETION_SIGNAL" = "true" ]; then
+    TASKS_FILE="$CWD/$SPEC_PATH/tasks.md"
+    UNCHECKED=$(curdx_count_unchecked_tasks "$TASKS_FILE")
+    if [ "$PHASE" = "execution" ] && [ "$TOTAL_TASKS" -gt 0 ] && [ "$TASK_INDEX" -ge "$TOTAL_TASKS" ] && [ "$UNCHECKED" -eq 0 ]; then
+        echo "[curdx] ALL_TASKS_COMPLETE validated via state/tasks ($SIGNAL_SOURCE)" >&2
+        curdx_log "stop-watcher" "Stop" "INFO" "ALL_TASKS_COMPLETE validated" "spec=$SPEC_NAME" "source=$SIGNAL_SOURCE" "decision=allow"
+        curdx_mark_completion_side_effects
+        exit 0
+    fi
+    curdx_log "stop-watcher" "Stop" "WARN" "completion signal ignored due to incomplete state" \
+      "spec=$SPEC_NAME" "source=$SIGNAL_SOURCE" "phase=$PHASE" "task=$TASK_INDEX/$TOTAL_TASKS" "decision=ignore"
 fi
 
 # Execution completion verification: cross-check state AND tasks.md
