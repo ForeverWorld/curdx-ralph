@@ -158,6 +158,7 @@ def run_context_monitor() -> int:
     """Run context monitoring. Always returns 0. Uses additionalContext JSON for all messages."""
     with HookTimer("context_monitor", "PostToolUse") as t:
         session_id = _get_session_id()
+        t.set(session_id=session_id)
 
         if _is_throttled(session_id):
             t.set(message="throttled (recent check + low context)", decision="skip")

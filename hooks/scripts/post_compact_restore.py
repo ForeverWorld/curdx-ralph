@@ -23,6 +23,9 @@ def run_post_compact_restore() -> int:
     """Restore .curdx-state.json and .progress.md after compaction."""
     with HookTimer("post_compact_restore", "PreCompact") as t:
         hook_data = read_hook_stdin()
+        session_id = str(hook_data.get("session_id", "")).strip()
+        if session_id:
+            t.set(session_id=session_id)
         cwd = Path.cwd()
         tmp = _curdx_temp_dir()
 

@@ -41,3 +41,39 @@ Combines the best of:
 ```bash
 claude --plugin-dir /path/to/curdx
 ```
+
+## Hook Logs
+
+CURDX hook logs are written under:
+
+- `~/.curdx/logs/hooks.log` (global)
+- `~/.curdx/logs/hooks.jsonl` (global structured stream for AI)
+- `~/.curdx/logs/hooks.<hook_name>.log` (per-hook split logs)
+- `~/.curdx/logs/hooks.<hook_name>.jsonl` (per-hook structured stream)
+- `~/.curdx/logs/sessions/<session>/...` (session-scoped copies)
+
+Every line includes `session`, `pid`, decision, and duration metadata for easier tracing.
+
+### Logging controls
+
+- `CURDX_HOOK_LOG=0` disable hook logging completely
+- `CURDX_HOOK_LOG_LEVEL=DEBUG|INFO|WARN|ERROR` set minimum log level (default: `DEBUG`)
+- `CURDX_HOOK_LOG_SPLIT=0` disable per-hook split files (keep global `hooks.log`)
+- `CURDX_HOOK_LOG_JSONL=0` disable JSONL output
+- `CURDX_HOOK_LOG_SESSION_SPLIT=0` disable session-scoped file copies
+
+### Quick debug commands
+
+```bash
+tail -f ~/.curdx/logs/hooks.log
+tail -f ~/.curdx/logs/hooks.tool_redirect.log
+```
+
+### AI log analysis
+
+Use the built-in analyzer to summarize blocks/errors/slow hooks without reading raw logs:
+
+```bash
+python3 hooks/scripts/analyze_hook_logs.py --since-minutes 60
+python3 hooks/scripts/analyze_hook_logs.py --session <session-id> --since-minutes 180
+```

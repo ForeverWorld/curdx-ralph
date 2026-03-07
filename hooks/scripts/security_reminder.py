@@ -7,27 +7,13 @@ This hook checks for security patterns in file edits and warns about potential v
 import json
 import os
 import random
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _util import HookTimer, hook_log
-
-# Debug log file
-DEBUG_LOG_FILE = "/tmp/security-warnings-log.txt"
-
-
-def debug_log(message):
-    """Append debug message to log file with timestamp."""
-    try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        with open(DEBUG_LOG_FILE, "a") as f:
-            f.write(f"[{timestamp}] {message}\n")
-    except Exception as e:
-        # Silently ignore logging errors to avoid disrupting the hook
-        pass
-
 
 # State file to track warnings shown (session-scoped using session ID)
 
@@ -130,9 +116,16 @@ Only use exec() if you absolutely need shell features and the input is guarantee
 ]
 
 
+def _sanitize_session_id(session_id: str) -> str:
+    """Sanitize session id before using it in a file name."""
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", session_id).strip("._")
+    return safe or "default"
+
+
 def get_state_file(session_id):
     """Get session-specific state file path."""
-    return os.path.expanduser(f"~/.claude/security_warnings_state_{session_id}.json")
+    safe_session_id = _sanitize_session_id(str(session_id))
+    return os.path.expanduser(f"~/.claude/security_warnings_state_{safe_session_id}.json")
 
 
 def cleanup_old_state_files():
@@ -180,7 +173,14 @@ def save_state(session_id, shown_warnings):
         with open(state_file, "w") as f:
             json.dump(list(shown_warnings), f)
     except IOError as e:
-        debug_log(f"Failed to save state file: {e}")
+        hook_log(
+            "security_reminder",
+            "PreToolUse",
+            f"failed to save state file: {e}",
+            level="WARN",
+            decision="allow",
+            session_id=session_id,
+        )
         pass  # Fail silently if we can't save state
 
 
@@ -238,15 +238,21 @@ def main():
             raw_input = sys.stdin.read()
             input_data = json.loads(raw_input)
         except json.JSONDecodeError as e:
-            debug_log(f"JSON decode error: {e}")
+            hook_log(
+                "security_reminder",
+                "PreToolUse",
+                f"invalid JSON input: {e}",
+                level="WARN",
+                decision="allow",
+            )
             t.set(message="invalid JSON input", level="WARN", decision="allow")
             sys.exit(0)  # Allow tool to proceed if we can't parse input
 
         # Extract session ID and tool information from the hook input
-        session_id = input_data.get("session_id", "default")
+        session_id = _sanitize_session_id(str(input_data.get("session_id", "default")))
         tool_name = input_data.get("tool_name", "")
         tool_input = input_data.get("tool_input", {})
-        t.set(tool=tool_name)
+        t.set(tool=tool_name, session_id=session_id)
 
         # Check if this is a relevant tool
         if tool_name not in ["Edit", "Write", "MultiEdit"]:

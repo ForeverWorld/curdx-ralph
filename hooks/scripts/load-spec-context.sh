@@ -12,13 +12,19 @@ INPUT=$(cat)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_log.sh"
 curdx_timer_start
-curdx_log "load-spec-context" "SessionStart" "DEBUG" "started"
 
 # Bail out cleanly if jq is unavailable
 if ! command -v jq >/dev/null 2>&1; then
     curdx_log "load-spec-context" "SessionStart" "WARN" "jq not found, skipping" "decision=skip"
     exit 0
 fi
+
+# Set session id for log correlation when available
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
+if [ -n "$SESSION_ID" ]; then
+    export CURDX_SESSION_ID="$SESSION_ID"
+fi
+curdx_log "load-spec-context" "SessionStart" "DEBUG" "started"
 
 # Get working directory (guard against parse failures)
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)

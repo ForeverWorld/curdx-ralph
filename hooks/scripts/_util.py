@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -31,8 +32,20 @@ _AUTOCOMPACT_BUFFER_TOKENS = 33_000
 
 _LOG_DIR = Path.home() / ".curdx" / "logs"
 _LOG_FILE = _LOG_DIR / "hooks.log"
+_LOG_JSONL_FILE = _LOG_DIR / "hooks.jsonl"
 _LOG_ENABLED: bool | None = None  # lazy cache
+_LOG_LEVEL_VALUE: int | None = None  # lazy cache
+_LOG_SPLIT_ENABLED: bool | None = None  # lazy cache
+_LOG_JSONL_ENABLED: bool | None = None  # lazy cache
+_LOG_SESSION_SPLIT_ENABLED: bool | None = None  # lazy cache
 _LOG_MAX_BYTES = 5 * 1024 * 1024  # 5MB auto-rotate
+_LOG_LEVELS = {
+    "DEBUG": 10,
+    "INFO": 20,
+    "WARN": 30,
+    "WARNING": 30,
+    "ERROR": 40,
+}
 
 
 def _is_log_enabled() -> bool:
@@ -43,16 +56,234 @@ def _is_log_enabled() -> bool:
     return _LOG_ENABLED
 
 
-def _rotate_if_needed() -> None:
+def _parse_bool_env(name: str, default: bool) -> bool:
+    """Parse common boolean env representations."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def _normalize_level(level: str) -> str:
+    """Normalize log level values and aliases."""
+    normalized = (level or "INFO").strip().upper()
+    if normalized == "WARNING":
+        return "WARN"
+    if normalized not in _LOG_LEVELS:
+        return "INFO"
+    return normalized
+
+
+def _min_log_level_value() -> int:
+    """Get configured minimum log level as numeric value."""
+    global _LOG_LEVEL_VALUE
+    if _LOG_LEVEL_VALUE is None:
+        raw = os.environ.get("CURDX_HOOK_LOG_LEVEL", "DEBUG").strip().upper()
+        if raw == "WARNING":
+            raw = "WARN"
+        _LOG_LEVEL_VALUE = _LOG_LEVELS.get(raw, _LOG_LEVELS["DEBUG"])
+    return _LOG_LEVEL_VALUE
+
+
+def _is_split_log_enabled() -> bool:
+    """Check whether per-hook log files are enabled."""
+    global _LOG_SPLIT_ENABLED
+    if _LOG_SPLIT_ENABLED is None:
+        _LOG_SPLIT_ENABLED = _parse_bool_env("CURDX_HOOK_LOG_SPLIT", True)
+    return _LOG_SPLIT_ENABLED
+
+
+def _is_jsonl_enabled() -> bool:
+    """Check whether JSONL output is enabled."""
+    global _LOG_JSONL_ENABLED
+    if _LOG_JSONL_ENABLED is None:
+        _LOG_JSONL_ENABLED = _parse_bool_env("CURDX_HOOK_LOG_JSONL", True)
+    return _LOG_JSONL_ENABLED
+
+
+def _is_session_split_enabled() -> bool:
+    """Check whether session-scoped log files are enabled."""
+    global _LOG_SESSION_SPLIT_ENABLED
+    if _LOG_SESSION_SPLIT_ENABLED is None:
+        _LOG_SESSION_SPLIT_ENABLED = _parse_bool_env("CURDX_HOOK_LOG_SESSION_SPLIT", True)
+    return _LOG_SESSION_SPLIT_ENABLED
+
+
+def _should_log_level(level: str) -> bool:
+    """Check level threshold against configured minimum."""
+    normalized = _normalize_level(level)
+    return _LOG_LEVELS[normalized] >= _min_log_level_value()
+
+
+def _rotate_if_needed(log_file: Path) -> None:
     """Rotate log file if it exceeds size limit."""
     try:
-        if _LOG_FILE.exists() and _LOG_FILE.stat().st_size > _LOG_MAX_BYTES:
-            rotated = _LOG_FILE.with_suffix(".log.1")
+        if log_file.exists() and log_file.stat().st_size > _LOG_MAX_BYTES:
+            rotated = log_file.with_name(f"{log_file.name}.1")
             if rotated.exists():
                 rotated.unlink()
-            _LOG_FILE.rename(rotated)
+            log_file.rename(rotated)
     except OSError:
         pass
+
+
+def _resolve_session_id(session_id: str | None = None) -> str:
+    """Resolve best-available session id for log correlation."""
+    if session_id and session_id.strip():
+        return session_id.strip()
+    for env_name in ("CURDX_SESSION_ID", "CLAUDE_SESSION_ID", "ANTHROPIC_SESSION_ID"):
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            return value
+    return "default"
+
+
+def _hook_log_file(hook_name: str) -> Path:
+    """Build per-hook log path with a filesystem-safe name."""
+    safe_hook = _sanitize_component(hook_name, default="unknown")
+    return _LOG_DIR / f"hooks.{safe_hook}.log"
+
+
+def _hook_jsonl_file(hook_name: str) -> Path:
+    """Build per-hook JSONL path with a filesystem-safe name."""
+    safe_hook = _sanitize_component(hook_name, default="unknown")
+    return _LOG_DIR / f"hooks.{safe_hook}.jsonl"
+
+
+def _session_log_dir(session_id: str) -> Path:
+    """Build session log directory path."""
+    safe_session = _sanitize_component(session_id, default="default")
+    return _LOG_DIR / "sessions" / safe_session
+
+
+def _sanitize_component(value: str, default: str) -> str:
+    """Sanitize a value for use in file names and directories."""
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("._")
+    if not safe:
+        return default
+    return safe
+
+
+def _build_text_line(
+    *,
+    ts: str,
+    level: str,
+    hook_name: str,
+    event: str,
+    session: str,
+    pid: int,
+    message: str,
+    tool: str = "",
+    file: str = "",
+    decision: str = "",
+    duration_ms: float | None = None,
+    extra: dict | None = None,
+) -> str:
+    """Build text log line."""
+    parts = [f"[{ts}]", f"[{level}]", f"[{hook_name}]", f"[{event}]", f"session={session}", f"pid={pid}"]
+    if tool:
+        parts.append(f"tool={tool}")
+    if file:
+        parts.append(f"file={file}")
+    if decision:
+        parts.append(f"decision={decision}")
+    if duration_ms is not None:
+        parts.append(f"dur={duration_ms:.1f}ms")
+    if extra:
+        parts.extend(f"{k}={v}" for k, v in extra.items())
+    parts.append(f"| {message}")
+    return " ".join(parts) + "\n"
+
+
+def _build_event_payload(
+    *,
+    ts: str,
+    level: str,
+    hook_name: str,
+    event: str,
+    session: str,
+    pid: int,
+    message: str,
+    tool: str = "",
+    file: str = "",
+    decision: str = "",
+    duration_ms: float | None = None,
+    extra: dict | None = None,
+) -> dict:
+    """Build structured event payload for JSONL."""
+    payload: dict = {
+        "ts": ts,
+        "ts_unix_ms": int(time.time() * 1000),
+        "level": level,
+        "hook": hook_name,
+        "event": event,
+        "session": session,
+        "pid": pid,
+        "message": message,
+    }
+    if tool:
+        payload["tool"] = tool
+    if file:
+        payload["file"] = file
+    if decision:
+        payload["decision"] = decision
+    if duration_ms is not None:
+        payload["duration_ms"] = round(duration_ms, 1)
+    if extra:
+        payload["extra"] = extra
+    return payload
+
+
+def _build_json_line(payload: dict) -> str:
+    """Serialize payload to JSONL line."""
+    return json.dumps(payload, ensure_ascii=True, separators=(",", ":")) + "\n"
+
+
+def _write_many(log_files: list[Path], content: str) -> None:
+    """Write same content to multiple files."""
+    for log_file in log_files:
+        _write_log_line(log_file, content)
+
+
+def _resolve_text_targets(hook_name: str, session_id: str) -> list[Path]:
+    """Resolve target files for text output."""
+    targets = [_LOG_FILE]
+    if _is_split_log_enabled():
+        targets.append(_hook_log_file(hook_name))
+    if _is_session_split_enabled():
+        session_dir = _session_log_dir(session_id)
+        targets.append(session_dir / "hooks.log")
+        if _is_split_log_enabled():
+            targets.append(session_dir / f"hooks.{_sanitize_component(hook_name, 'unknown')}.log")
+    return targets
+
+
+def _resolve_jsonl_targets(hook_name: str, session_id: str) -> list[Path]:
+    """Resolve target files for JSONL output."""
+    if not _is_jsonl_enabled():
+        return []
+    targets = [_LOG_JSONL_FILE]
+    if _is_split_log_enabled():
+        targets.append(_hook_jsonl_file(hook_name))
+    if _is_session_split_enabled():
+        session_dir = _session_log_dir(session_id)
+        targets.append(session_dir / "hooks.jsonl")
+        if _is_split_log_enabled():
+            targets.append(session_dir / f"hooks.{_sanitize_component(hook_name, 'unknown')}.jsonl")
+    return targets
+
+
+def _write_log_line(log_file: Path, line: str) -> None:
+    """Append line to a log file with rotation."""
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    _rotate_if_needed(log_file)
+    with log_file.open("a") as f:
+        f.write(line)
 
 
 def hook_log(
@@ -66,45 +297,51 @@ def hook_log(
     decision: str = "",
     duration_ms: float | None = None,
     extra: dict | None = None,
+    session_id: str | None = None,
 ) -> None:
-    """Write a structured log entry to ~/.curdx/logs/hooks.log.
-
-    Args:
-        hook_name: Script name (e.g. "security_reminder", "stop-watcher")
-        event: Hook event type (e.g. "PreToolUse", "Stop", "SessionStart")
-        message: Human-readable description of what happened
-        level: Log level — DEBUG, INFO, WARN, ERROR
-        tool: Tool name if applicable (e.g. "Write", "Bash")
-        file: File path if applicable
-        decision: Decision taken (e.g. "allow", "deny", "block", "context")
-        duration_ms: Execution time in milliseconds
-        extra: Additional key-value pairs to include
-    """
-    if not _is_log_enabled():
+    """Write structured hook logs to ~/.curdx/logs/."""
+    level_norm = _normalize_level(level)
+    if not _is_log_enabled() or not _should_log_level(level_norm):
         return
+
     try:
         _LOG_DIR.mkdir(parents=True, exist_ok=True)
-        _rotate_if_needed()
-
+        session = _resolve_session_id(session_id)
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        pid = os.getpid()
+        text_line = _build_text_line(
+            ts=ts,
+            level=level_norm,
+            hook_name=hook_name,
+            event=event,
+            session=session,
+            pid=pid,
+            message=message,
+            tool=tool,
+            file=file,
+            decision=decision,
+            duration_ms=duration_ms,
+            extra=extra,
+        )
+        _write_many(_resolve_text_targets(hook_name, session), text_line)
 
-        parts = [f"[{ts}]", f"[{level}]", f"[{hook_name}]", f"[{event}]"]
-        if tool:
-            parts.append(f"tool={tool}")
-        if file:
-            parts.append(f"file={file}")
-        if decision:
-            parts.append(f"decision={decision}")
-        if duration_ms is not None:
-            parts.append(f"dur={duration_ms:.1f}ms")
-        parts.append(f"| {message}")
-        if extra:
-            kv = " ".join(f"{k}={v}" for k, v in extra.items())
-            parts.append(f"({kv})")
-
-        line = " ".join(parts) + "\n"
-        with _LOG_FILE.open("a") as f:
-            f.write(line)
+        json_targets = _resolve_jsonl_targets(hook_name, session)
+        if json_targets:
+            payload = _build_event_payload(
+                ts=ts,
+                level=level_norm,
+                hook_name=hook_name,
+                event=event,
+                session=session,
+                pid=pid,
+                message=message,
+                tool=tool,
+                file=file,
+                decision=decision,
+                duration_ms=duration_ms,
+                extra=extra,
+            )
+            _write_many(json_targets, _build_json_line(payload))
     except OSError:
         pass  # Never let logging break hooks
 
@@ -127,7 +364,8 @@ class HookTimer:
         self._decision = ""
         self._message = "completed"
         self._level = "INFO"
-        self._extra: dict | None = None
+        self._extra: dict = {}
+        self._session_id: str | None = None
 
     def set(
         self,
@@ -138,6 +376,7 @@ class HookTimer:
         decision: str = "",
         level: str = "",
         extra: dict | None = None,
+        session_id: str = "",
     ) -> None:
         if message:
             self._message = message
@@ -150,11 +389,13 @@ class HookTimer:
         if level:
             self._level = level
         if extra:
-            self._extra = extra
+            self._extra.update(extra)
+        if session_id:
+            self._session_id = session_id
 
     def __enter__(self) -> "HookTimer":
         self._start = time.monotonic()
-        hook_log(self.hook_name, self.event, "started", level="DEBUG")
+        hook_log(self.hook_name, self.event, "started", level="DEBUG", session_id=self._session_id)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -168,6 +409,7 @@ class HookTimer:
                 tool=self._tool,
                 file=self._file,
                 duration_ms=elapsed,
+                session_id=self._session_id,
             )
         else:
             hook_log(
@@ -179,7 +421,8 @@ class HookTimer:
                 file=self._file,
                 decision=self._decision,
                 duration_ms=elapsed,
-                extra=self._extra,
+                extra=self._extra or None,
+                session_id=self._session_id,
             )
         return None  # don't suppress exceptions
 

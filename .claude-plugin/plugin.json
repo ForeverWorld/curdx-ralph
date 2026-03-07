@@ -1,1 +1,18 @@
-{"name":"curdx","version":"1.0.0","description":"Unified spec-driven development with TDD, quality gates, PR review","author":{"name":"wdx"}}
+{
+  "name": "curdx",
+  "version": "1.0.0",
+  "description": "Unified spec-driven development with TDD, quality gates, PR review",
+  "author": {
+    "name": "wdx"
+  },
+  "repository": "https://github.com/ForeverWorld/curdx-ralph",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "spec-driven",
+    "tdd",
+    "workflow",
+    "hooks"
+  ]
+}

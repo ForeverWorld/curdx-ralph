@@ -169,7 +169,8 @@ def run_tool_redirect() -> int:
 
         tool_name = hook_data.get("tool_name", "")
         tool_input = hook_data.get("tool_input", {}) if isinstance(hook_data.get("tool_input"), dict) else {}
-        t.set(tool=tool_name)
+        session_id = str(hook_data.get("session_id", "")).strip()
+        t.set(tool=tool_name, session_id=session_id)
 
         if tool_name == "Task" and tool_input.get("subagent_type") == "Explore":
             t.set(message="Explore subagent — hint vexor search", decision="hint")

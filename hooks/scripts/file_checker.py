@@ -28,6 +28,10 @@ def main() -> int:
             t.set(message="invalid JSON input", level="WARN", decision="allow")
             return 0
 
+        session_id = str(hook_data.get("session_id", "")).strip()
+        if session_id:
+            t.set(session_id=session_id)
+
         tool_input = hook_data.get("tool_input", {})
         file_path_str = tool_input.get("file_path", "")
         if not file_path_str:

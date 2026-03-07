@@ -149,6 +149,7 @@ def _is_implementation_file(file_path: str) -> bool:
 def _handle_session_start(hook_data: dict) -> int:
     """SessionStart: initialize guard directory, clear transient data."""
     _GUARD_DIR.mkdir(parents=True, exist_ok=True)
+    session_id = str(hook_data.get("session_id", "")).strip()
 
     # Clear transient data files (test results, modifications, etc.)
     transient_files = ["test.json", "modifications.json", "lint.json"]
@@ -160,7 +161,7 @@ def _handle_session_start(hook_data: dict) -> int:
             except OSError:
                 pass
 
-    hook_log("tdd_guard", "SessionStart", "initialized guard directory")
+    hook_log("tdd_guard", "SessionStart", "initialized guard directory", session_id=session_id)
 
     # Show guard status on session start
     enabled = _is_guard_enabled()
@@ -215,6 +216,7 @@ def _handle_pre_tool_use(hook_data: dict) -> int:
 
     tool_name = hook_data.get("tool_name", "")
     tool_input = hook_data.get("tool_input", {})
+    session_id = str(hook_data.get("session_id", "")).strip()
     if not isinstance(tool_input, dict):
         return 0
 
@@ -232,6 +234,7 @@ def _handle_pre_tool_use(hook_data: dict) -> int:
             "tdd_guard", "PreToolUse",
             f"test file edit allowed: {Path(file_path).name}",
             tool=tool_name, file=file_path, decision="allow",
+            session_id=session_id,
         )
         return 0
 
@@ -259,6 +262,7 @@ def _handle_pre_tool_use(hook_data: dict) -> int:
             "tdd_guard", "PreToolUse",
             f"TDD reminder for implementation edit: {fname}",
             tool=tool_name, file=file_path, decision="context",
+            session_id=session_id,
         )
         return 0
 
@@ -292,6 +296,9 @@ def main() -> int:
             hook_name = "PreToolUse"
 
     with HookTimer("tdd_guard", hook_name or "unknown") as t:
+        session_id = str(hook_data.get("session_id", "")).strip()
+        if session_id:
+            t.set(session_id=session_id)
         if hook_name == "SessionStart":
             t.set(message="session start handler")
             return _handle_session_start(hook_data)

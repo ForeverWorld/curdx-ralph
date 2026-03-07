@@ -39,7 +39,8 @@ def main():
             input_data = json.load(sys.stdin)
 
             tool_name = input_data.get('tool_name', '')
-            t.set(tool=tool_name)
+            session_id = str(input_data.get("session_id", "")).strip()
+            t.set(tool=tool_name, session_id=session_id)
 
             event = None
             if tool_name == 'Bash':

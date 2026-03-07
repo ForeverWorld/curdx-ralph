@@ -17,6 +17,12 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 0
 fi
 
+# Set session id for log correlation when available
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || true)
+if [ -n "$SESSION_ID" ]; then
+    export CURDX_SESSION_ID="$SESSION_ID"
+fi
+
 # Get working directory
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
 if [ -z "$CWD" ]; then

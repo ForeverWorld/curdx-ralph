@@ -1,0 +1,35 @@
+name: Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  hooks-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate shell hook syntax
+        run: bash -n hooks/scripts/*.sh
+
+      - name: Validate Python hook syntax
+        run: python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py
+
+  repo-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate plugin manifest metadata
+        run: python3 scripts/ci/check_plugin_manifest.py
+
+      - name: Validate skill frontmatter
+        run: python3 scripts/ci/check_skills_frontmatter.py
+
+      - name: Validate local markdown links
+        run: python3 scripts/ci/check_local_links.py

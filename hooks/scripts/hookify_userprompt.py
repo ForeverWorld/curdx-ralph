@@ -36,6 +36,9 @@ def main():
     with HookTimer("hookify_userprompt", "UserPromptSubmit") as t:
         try:
             input_data = json.load(sys.stdin)
+            session_id = str(input_data.get("session_id", "")).strip()
+            if session_id:
+                t.set(session_id=session_id)
 
             rules = load_rules(event='prompt')
             t.set(extra={"rules_count": str(len(rules))})
