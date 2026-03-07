@@ -32,10 +32,10 @@ Classify user goals to determine if diagnosis is needed. See `references/goal-de
 | type, typescript | `pnpm check-types` or `tsc --noEmit` |
 | lint | `pnpm lint` |
 | build | `pnpm build` |
-| E2E, UI | MCP playwright |
+| E2E, UI | MCP chrome-devtools |
 | API, endpoint | MCP fetch |
 
-For E2E/deployment verification, use MCP tools (playwright for UI, fetch for APIs).
+For E2E/deployment verification, use MCP tools (chrome-devtools for UI, fetch for APIs).
 
 ## BEFORE/AFTER Documentation
 

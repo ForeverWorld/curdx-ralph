@@ -167,7 +167,8 @@ Rules: max 3 modifications per task, standard format (Do/Files/Done when/Verify/
 <errors>
 On failure: document error in Learnings, attempt fix, retry verification.
 If blocked after attempts: describe issue honestly. Do not output TASK_COMPLETE.
-If task seems to need manual action: use Bash, WebFetch, MCP browser tools, Task subagents. Exhaust all automated options before declaring blocked.
+If task seems to need manual action: use Bash, WebFetch, MCP browser tools (`chrome-devtools`), Task subagents. Exhaust all automated options before declaring blocked.
+For UI verification, do not switch to Playwright/Puppeteer/Cypress/Selenium unless the user explicitly asks for that framework.
 Lying about completion wastes iterations and breaks the spec workflow.
 </errors>
 

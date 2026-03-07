@@ -40,7 +40,7 @@ Read Intent Classification from `.progress.md`:
 **POC Checkpoint** (last task of Phase 1):
 ```markdown
 - [ ] 1.N POC Checkpoint
-  - **Do**: Verify feature works end-to-end using automated tools (WebFetch, curl, browser automation, test runner)
+  - **Do**: Verify feature works end-to-end using automated tools (WebFetch, curl, chrome-devtools-mcp, test runner)
   - **Done when**: Feature can be demonstrated working via automated verification
   - **Verify**: Run automated end-to-end verification
   - **Commit**: `feat(scope): complete POC`
@@ -61,7 +61,7 @@ Read Intent Classification from `.progress.md`:
 
 **Goal**: Add comprehensive test coverage.
 
-- Write tests as specified (unit, integration, e2e)
+- Write tests as specified (unit, integration) and verify UI flows with chrome-devtools-mcp when applicable
 - All tests must pass
 - Cover main functionality and integration points
 
@@ -172,7 +172,7 @@ Each unit of work is a 3-task cycle:
 
 - Unit tests are already written in Phase 1 [RED] steps
 - This phase adds integration tests spanning multiple components
-- E2E tests for user-facing flows
+- Browser-flow verification for user-facing flows via chrome-devtools-mcp
 - Lighter than POC Phase 3 since core coverage exists
 
 **Phase distribution**: 10-15% of total tasks
@@ -278,7 +278,7 @@ Insert quality gate checkpoints throughout the task list to catch issues early.
 1. Type checking passes: `pnpm check-types` or equivalent
 2. Lint passes: `pnpm lint` or equivalent
 3. Existing tests pass: `pnpm test` or equivalent (if tests exist)
-4. E2E tests pass: `pnpm test:e2e` or equivalent (if E2E exists)
+4. UI/browser verification passes via MCP `chrome-devtools` (if UI exists)
 5. Code compiles/builds successfully
 
 ### Checkpoint Format
@@ -294,10 +294,10 @@ Standard [VERIFY] checkpoint (every 2-3 tasks):
 
 Final verification sequence (last 3 tasks of spec):
 ```markdown
-- [ ] V4 [VERIFY] Full local CI: <lint> && <typecheck> && <test> && <e2e> && <build>
-  - **Do**: Run complete local CI suite including E2E
+- [ ] V4 [VERIFY] Full local CI: <lint> && <typecheck> && <test> && <build>
+  - **Do**: Run complete local CI suite
   - **Verify**: All commands pass
-  - **Done when**: Build succeeds, all tests pass, E2E green
+  - **Done when**: Build succeeds and all tests pass
   - **Commit**: `chore(scope): pass local CI` (if fixes needed)
 
 - [ ] V5 [VERIFY] CI pipeline passes

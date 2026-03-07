@@ -164,7 +164,7 @@ Add to research.md:
 | TypeCheck | `pnpm run check-types` | package.json scripts.check-types |
 | Unit Test | `pnpm test:unit` | package.json scripts.test:unit |
 | Integration Test | `pnpm test:integration` | package.json scripts.test:integration |
-| E2E Test | `pnpm test:e2e` | package.json scripts.test:e2e |
+| Browser Verification | `chrome-devtools-mcp <flow check>` | MCP chrome-devtools tooling |
 | Test (all) | `pnpm test` | package.json scripts.test |
 | Build | `pnpm run build` | package.json scripts.build |
 
@@ -188,14 +188,14 @@ Run these commands to detect available verification tooling:
    jq -r '.scripts | to_entries[] | select(.key | test("dev|start|serve")) | "\(.key): \(.value)"' package.json 2>/dev/null || echo "No dev server scripts"
    ```
 
-2. **Browser automation deps** — check dependencies and devDependencies:
+2. **MCP browser readiness** — check whether `chrome-devtools` MCP server is configured:
    ```bash
-   jq -r '[(.dependencies // {}), (.devDependencies // {})] | add | to_entries[] | select(.key | test("playwright|puppeteer|cypress|selenium")) | "\(.key): \(.value)"' package.json 2>/dev/null || echo "No browser automation deps"
+   claude mcp list 2>/dev/null | grep '^chrome-devtools:' || echo "No chrome-devtools MCP server configured"
    ```
 
-3. **E2E config files** — look for framework config files in project root:
+3. **Browser entry points** — find pages/routes needed for UI verification:
    ```bash
-   ls playwright.config.* cypress.config.* cypress.json .cypressrc* wdio.conf.* 2>/dev/null || echo "No E2E config files"
+   ls src/pages src/routes app/pages app/routes 2>/dev/null || echo "No obvious UI route directories found"
    ```
 
 4. **Port detection** — extract port numbers from env files and package.json scripts:
@@ -224,22 +224,22 @@ Add to research.md:
 | Tool | Command | Detected From |
 |------|---------|---------------|
 | Dev Server | `npm run dev` | package.json scripts.dev |
-| Browser Automation | `playwright` | devDependencies |
-| E2E Config | `playwright.config.ts` | project root |
+| Browser Verification | `chrome-devtools` MCP server | `claude mcp list` |
+| UI Entry Points | `src/pages` | project tree |
 | Port | `3000` | .env / package.json |
 | Health Endpoint | `/api/health` | src/routes/ |
 | Docker | `docker-compose.yml` | project root |
 
 **Project Type**: Web App / API / CLI / Mobile / Library
-**Verification Strategy**: Start dev server on port 3000, use curl to check health endpoint, use playwright for critical user flows / Build and verify import / Run CLI commands and check output
+**Verification Strategy**: Start dev server on port 3000, use curl to check health endpoint, use chrome-devtools-mcp for critical user flows / Build and verify import / Run CLI commands and check output
 ```
 
-If no automated E2E tooling detected, output:
+If no MCP browser tooling is detected, output:
 
 ```markdown
 ## Verification Tooling
 
-No automated E2E tooling detected. Fallback: build + import check only.
+No MCP browser tooling detected. Frontend UI verification is blocked until chrome-devtools MCP is installed (`/curdx:mcp-doctor --install-missing`). Fallback: build + import check only.
 
 **Project Type**: Library
 **Verification Strategy**: Build and verify artifact is importable

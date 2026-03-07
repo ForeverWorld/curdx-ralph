@@ -168,8 +168,8 @@ sequenceDiagram
 ### Integration Tests
 - [Integration point to test]
 
-### E2E Tests (if UI)
-- [User flow to test]
+### UI Flow Verification (if UI)
+- [User flow to verify via chrome-devtools-mcp]
 
 ## Performance Considerations
 

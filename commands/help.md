@@ -229,7 +229,7 @@ Each phase uses a specialized agent:
 Tasks follow a 4-phase structure:
 1. **Phase 1: Make It Work** - POC validation, skip tests
 2. **Phase 2: Refactoring** - Clean up code
-3. **Phase 3: Testing** - Unit, integration, e2e tests
+3. **Phase 3: Testing** - Unit, integration, browser-flow verification (chrome-devtools-mcp)
 4. **Phase 4: Quality Gates** - Lint, types, CI
 
 ## Troubleshooting

@@ -48,9 +48,9 @@ Map goal keywords to reproduction commands:
 | lint, linting | `pnpm lint` or `eslint .` |
 | build, compile | `pnpm build` or `npm run build` |
 | deploy, deployment | `gh api` or MCP fetch to check status |
-| E2E, UI, browser, visual | MCP playwright to screenshot or run E2E suite |
+| E2E, UI, browser, visual | MCP chrome-devtools to screenshot or run browser flows |
 | endpoint, API, response | MCP fetch with expected status/response validation |
-| site, page, live | MCP fetch/playwright to verify live behavior |
+| site, page, live | MCP fetch/chrome-devtools to verify live behavior |
 
 ## Fallback
 

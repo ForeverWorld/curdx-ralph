@@ -36,7 +36,6 @@ Standard scripts to look for:
 |-----------|-------------|-------------------|
 | `test` | Tests | `npm test` / `pnpm test` |
 | `test:unit` | Unit tests | `pnpm test:unit` |
-| `test:e2e` | E2E tests | `pnpm test:e2e` |
 | `test:integration` | Integration tests | `pnpm test:integration` |
 | `lint` | Linting | `pnpm lint` |
 | `lint:fix` | Auto-fix lint | `pnpm lint:fix` |
@@ -86,7 +85,7 @@ When no config file is found:
 | Phase 1 (POC) | Lint + type check only. Skip tests -- POC validates the idea, not test coverage |
 | Phase 2 (Refactoring) | Lint + type check + existing tests (ensure refactoring doesn't break anything) |
 | Phase 3 (Testing) | Lint + type check + all tests including newly written ones |
-| Phase 4 (Quality Gates) | Full suite: lint + type check + all tests + E2E + build |
+| Phase 4 (Quality Gates) | Full suite: lint + type check + all tests + build |
 | Phase 5 (PR Lifecycle) | Full suite + `gh pr checks` for CI pipeline status |
 
 ## Verify Command Format
@@ -96,7 +95,7 @@ Checkpoint tasks chain commands with `&&` so any failure stops execution:
 ```
 <lint cmd> && <typecheck cmd>                          # Phase 1
 <lint cmd> && <typecheck cmd> && <test cmd>            # Phase 2-3
-<lint cmd> && <typecheck cmd> && <test cmd> && <e2e> && <build>  # Phase 4
+<lint cmd> && <typecheck cmd> && <test cmd> && <build>           # Phase 4
 ```
 
 All commands must exit 0 for the checkpoint to pass.
@@ -108,7 +107,7 @@ When a task's Verify field seems to require manual testing, use these automated 
 | Seems Manual | Automated Alternative |
 |-------------|----------------------|
 | Visual/UI checks | DOM element assertions, screenshot comparison CLI |
-| User flow testing | Browser automation (Puppeteer/Playwright), MCP browser tools |
+| User flow testing | Browser automation via MCP `chrome-devtools` |
 | Dashboard verification | API queries to the dashboard backend, WebFetch |
 | Extension testing | `web-ext lint`, manifest validation, build output checks |
 | API verification | `curl http://localhost:PORT/endpoint \| jq .field` |

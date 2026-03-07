@@ -32,7 +32,7 @@ For a PostHog analytics integration, a human would:
 - **Email**: Send real email (to test address), verify delivery
 
 **Tools available for E2E validation:**
-- MCP browser tools - spawn real browser, interact with pages
+- `chrome-devtools-mcp` via MCP `chrome-devtools` server - spawn real browser, interact with pages
 - WebFetch - hit APIs, check responses
 - Bash/curl - call endpoints, inspect responses
 - CLI tools - project-specific test runners, API clients
@@ -58,16 +58,27 @@ Design tasks so that by Phase 1 POC end, you have PROVEN the integration works w
 - `pnpm test` - test runner
 - `grep -r "expectedPattern" ./src` - code verification
 - `gh pr checks` - CI status
-- Browser automation via MCP tools or CLI
+- Browser automation via MCP `chrome-devtools` only
 - WebFetch to check external API responses
 
 If a verification seems to require manual testing, find an automated alternative:
 - Visual checks → DOM element assertions, screenshot comparison CLI
-- User flow testing → Browser automation, Puppeteer/Playwright
+- User flow testing → Browser automation via `chrome-devtools-mcp`
 - Dashboard verification → API queries to the dashboard backend
 - Extension testing → `web-ext lint`, manifest validation, build output checks
 
 **Tasks that cannot be automated must be redesigned or removed.**
+</mandatory>
+
+## MCP-Only Frontend Verification
+
+<mandatory>
+For UI/frontend verification, use MCP `chrome-devtools` only.
+
+- Do NOT generate verification steps that depend on Playwright, Puppeteer, Cypress, or Selenium.
+- If frontend/browser verification is needed and MCP `chrome-devtools` is unavailable, mark as blocked with explicit setup action:
+  - Run `/curdx:mcp-doctor --install-missing`
+- VE2 tasks for UI must use a `chrome-devtools-mcp` command/tool flow, not framework E2E runners.
 </mandatory>
 
 ## No New Spec Directories for Testing
@@ -185,7 +196,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md` for full phase structure 
 When intent is GREENFIELD, follow POC-first workflow:
 1. **Phase 1: Make It Work** - Validate idea fast, skip tests, accept shortcuts
 2. **Phase 2: Refactoring** - Clean up code structure
-3. **Phase 3: Testing** - Add unit/integration/e2e tests
+3. **Phase 3: Testing** - Add unit/integration tests and browser-flow verification
 4. **Phase 4: Quality Gates** - Lint, types, CI verification
 </mandatory>
 
@@ -196,7 +207,7 @@ When intent is NOT GREENFIELD (TRIVIAL, REFACTOR, MID_SIZED), use TDD Red-Green-
 
 **Phases:**
 1. **Phase 1: Red-Green-Yellow Cycles** - TDD triplets drive implementation
-2. **Phase 2: Additional Testing** - Integration/E2E beyond unit tests
+2. **Phase 2: Additional Testing** - Integration + browser verification beyond unit tests
 3. **Phase 3: Quality Gates** - Lint, types, CI verification
 4. **Phase 4: PR Lifecycle** - CI monitoring, review resolution
 
@@ -282,7 +293,7 @@ Read the "Verification Tooling" section from research.md to determine project ty
 
 | Project Type | Detection Signal | VE Approach |
 |---|---|---|
-| Web App | Dev server script + browser deps (playwright/puppeteer/cypress) | Start server, curl/browser check |
+| Web App | Dev server script + MCP `chrome-devtools` available | Start server, curl/browser check |
 | API | Dev server script + health endpoint | Start server, curl endpoints |
 | CLI | Binary/script entry point | Run commands, check output |
 | Mobile | iOS/Android deps (react-native, flutter, xcode) | Simulator if available |
@@ -304,7 +315,7 @@ Generate VE tasks using this 3-task structure (startup, check, cleanup):
 
 - [ ] VE2 [VERIFY] E2E check: test critical user flow
   - **Do**:
-    1. Test critical user flow via curl/browser/CLI
+    1. Test critical user flow via curl/chrome-devtools-mcp/CLI
     2. Verify expected output or response code
   - **Verify**: `{{critical_flow_cmd}} && echo VE2_PASS`
   - **Done when**: Critical user flow produces expected output
@@ -380,7 +391,7 @@ Insert quality gate checkpoints throughout the task list to catch issues early:
 1. Type checking passes: `pnpm check-types` or equivalent
 2. Lint passes: `pnpm lint` or equivalent
 3. Existing tests pass: `pnpm test` or equivalent (if tests exist)
-4. E2E tests pass: `pnpm test:e2e` or equivalent (if E2E exists)
+4. UI/browser verification passes via MCP `chrome-devtools` (if UI exists)
 5. Code compiles/builds successfully
 
 **Checkpoint Task Format:**
@@ -415,10 +426,10 @@ Replace generic "Quality Checkpoint" tasks with [VERIFY] tagged tasks:
 
 **Final verification sequence** (last 3 tasks of spec):
 ```markdown
-- [ ] V4 [VERIFY] Full local CI: <lint> && <typecheck> && <test> && <e2e> && <build>
-  - **Do**: Run complete local CI suite including E2E
+- [ ] V4 [VERIFY] Full local CI: <lint> && <typecheck> && <test> && <build>
+  - **Do**: Run complete local CI suite
   - **Verify**: All commands pass
-  - **Done when**: Build succeeds, all tests pass, E2E green
+  - **Done when**: Build succeeds and all tests pass
   - **Commit**: `chore(scope): pass local CI` (if fixes needed)
 
 - [ ] V5 [VERIFY] CI pipeline passes
@@ -541,7 +552,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values.
   - **Do**: [Exact steps to implement]
   - **Files**: [Exact file paths to create/modify]
   - **Done when**: [Explicit success criteria]
-  - **Verify**: [Automated command, e.g., `curl http://localhost:3000/api | jq .status`, `pnpm test`, browser automation]
+  - **Verify**: [Automated command, e.g., `curl http://localhost:3000/api | jq .status`, `pnpm test`, chrome-devtools-mcp flow check]
   - **Commit**: `feat(scope): [task description]`
   - _Requirements: FR-1, AC-1.1_
   - _Design: Component A_
@@ -569,9 +580,9 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values.
   - **Commit**: `feat(scope): [description]`
 
 - [ ] 1.5 POC Checkpoint
-  - **Do**: Verify feature works end-to-end using automated tools (WebFetch, curl, browser automation, test runner)
+  - **Do**: Verify feature works end-to-end using automated tools (WebFetch, curl, chrome-devtools-mcp, test runner)
   - **Done when**: Feature can be demonstrated working via automated verification
-  - **Verify**: Run automated end-to-end verification (e.g., `curl API | jq`, browser automation script, or test command)
+  - **Verify**: Run automated end-to-end verification (e.g., `curl API | jq`, chrome-devtools-mcp flow check, or test command)
   - **Commit**: `feat(scope): complete POC`
 
 ## Phase 2: Refactoring
@@ -624,12 +635,12 @@ After POC validated, clean up code.
   - **Done when**: No lint errors, no type errors, tests pass
   - **Commit**: `chore(scope): pass quality checkpoint` (only if fixes needed)
 
-- [ ] 3.4 E2E tests (if UI)
-  - **Do**: Create E2E test at [path]
-  - **Files**: [test file path]
-  - **Done when**: User flow tested
-  - **Verify**: E2E test command passes
-  - **Commit**: `test(scope): add e2e tests`
+- [ ] 3.4 Browser flow verification (if UI)
+  - **Do**: Add MCP `chrome-devtools` verification step for critical user flow
+  - **Files**: [verification script/doc path if needed]
+  - **Done when**: Critical UI flow verified via chrome-devtools-mcp
+  - **Verify**: chrome-devtools-mcp verification command passes
+  - **Commit**: `test(scope): add browser flow verification`
   - _Requirements: US-1_
 
 ## Phase 4: Quality Gates
@@ -745,7 +756,7 @@ Focus: Test-driven implementation. Every change starts with a failing test.
 
 ## Phase 2: Additional Testing
 
-Focus: Integration and E2E tests beyond unit tests written in Phase 1.
+Focus: Integration tests and browser-flow verification beyond unit tests written in Phase 1.
 
 - [ ] 2.1 Integration tests for <component interaction>
   - **Do**: Create integration test at <path>

@@ -19,7 +19,7 @@ Quality gate checkpoints are inserted throughout the task list to catch type err
 1. Type checking passes: `pnpm check-types` or equivalent
 2. Lint passes: `pnpm lint` or equivalent
 3. Existing tests pass: `pnpm test` or equivalent (if tests exist)
-4. E2E tests pass: `pnpm test:e2e` or equivalent (if E2E exists)
+4. UI/browser verification passes via MCP `chrome-devtools` (if UI exists)
 5. Code compiles/builds successfully
 
 **Discovery**: Read `research.md` for actual project commands. Do NOT assume `pnpm lint` or `npm test` exists.
@@ -86,10 +86,10 @@ All checkpoints use the `[VERIFY]` tag and follow the standard Do/Verify/Done wh
 ## Final Verification Sequence (Last 3 Tasks)
 
 ```markdown
-- [ ] V4 [VERIFY] Full local CI: <lint> && <typecheck> && <test> && <e2e> && <build>
-  - **Do**: Run complete local CI suite including E2E
+- [ ] V4 [VERIFY] Full local CI: <lint> && <typecheck> && <test> && <build>
+  - **Do**: Run complete local CI suite
   - **Verify**: All commands pass
-  - **Done when**: Build succeeds, all tests pass, E2E green
+  - **Done when**: Build succeeds and all tests pass
   - **Commit**: `chore(scope): pass local CI` (if fixes needed)
 
 - [ ] V5 [VERIFY] CI pipeline passes
@@ -141,7 +141,7 @@ VE tasks provide autonomous end-to-end verification by spinning up real infrastr
 
 - [ ] VE2 [VERIFY] E2E check: verify critical user flow
   - **Do**:
-    1. Execute critical user flow via curl, browser automation, or CLI
+    1. Execute critical user flow via curl, chrome-devtools-mcp, or CLI
     2. Verify expected output / response / behavior
     3. Check for error states (non-200 responses, missing elements, crashes)
   - **Verify**: Command testing critical flow exits 0

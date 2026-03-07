@@ -22,7 +22,7 @@ Before invoking any subagents, analyze the goal and break it into independent re
 | Domain-Specific (web) | `research-analyst` | Specialized topics needing focused web research |
 | Domain-Specific (code) | `Explore` | Specialized topics needing codebase exploration |
 | Quality Commands | `Explore` | Project lint/test/build commands discovery |
-| Verification Tooling | `Explore` | Dev server, test runner, browser deps, E2E configs, ports |
+| Verification Tooling | `Explore` | Dev server, test runner, MCP browser readiness, ports |
 
 **Minimum requirement**: 2 topics (1 research-analyst + 1 Explore). There are zero exceptions to the parallel requirement.
 
