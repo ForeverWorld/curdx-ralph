@@ -230,6 +230,7 @@ When `.progress.md` contains `## Reality Check (BEFORE)`, the goal is a fix-type
 > See also: `${CLAUDE_PLUGIN_ROOT}/references/quality-checkpoints.md` for VE format details and verify-fix-reverify loop. See `${CLAUDE_PLUGIN_ROOT}/agents/task-planner.md` "VE Task Generation" for VE templates and generation rules.
 
 VE tasks provide autonomous end-to-end verification by spinning up real infrastructure and testing built features against it.
+For services with web control panels (for example Nacos/RabbitMQ), VE includes control-panel configuration tasks via MCP `chrome-devtools`.
 
 ### Placement
 
@@ -246,6 +247,7 @@ VE tasks follow a 3-part structure:
 1. **VE1 (Startup)** — Start dev server/infrastructure in background, record PID, wait for ready
 2. **VE2 (Check)** — Test critical user flows via curl/browser/CLI, verify expected output
 3. **VE3 (Cleanup)** — Kill by PID, kill by port fallback, remove PID file, verify port free
+4. **CP1-CP4 (Control Panel, conditional)** — When research.md has `## Control Panel Targets`, add startup/login-config/API-verify/cleanup tasks for each target service
 
 ### Rules
 
@@ -255,6 +257,7 @@ VE tasks follow a 3-part structure:
 - **Commands from research.md**: All commands (dev server, port, health endpoint) come from research.md Verification Tooling section. Never hardcoded.
 - **Recovery mode always enabled**: VE failures trigger fix task generation via existing recovery mode, regardless of state file recoveryMode flag.
 - **Max 3 retries per VE task**: After 3 failed attempts, skip to VE-cleanup and report error.
+- **Control panel verification is dual-proof**: UI action through chrome-devtools-mcp + API/CLI readback.
 
 ### When Omitted
 

@@ -23,6 +23,7 @@ Before invoking any subagents, analyze the goal and break it into independent re
 | Domain-Specific (code) | `Explore` | Specialized topics needing codebase exploration |
 | Quality Commands | `Explore` | Project lint/test/build commands discovery |
 | Verification Tooling | `Explore` | Dev server, test runner, MCP browser readiness, ports |
+| Control Panel Targets | `Explore` + `research-analyst` | Detect Nacos/RabbitMQ panels, official auth/port baselines, API verify paths |
 
 **Minimum requirement**: 2 topics (1 research-analyst + 1 Explore). There are zero exceptions to the parallel requirement.
 

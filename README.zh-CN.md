@@ -192,6 +192,11 @@ bash scripts/mcp-doctor.sh --install-missing
 - `context7`
 - `chrome-devtools`
 
+控制台自动化能力：
+- 对 Nacos、RabbitMQ 这类带网页控制台的服务，CURDX 会规划 MCP 浏览器验证任务：
+  - 通过 `chrome-devtools-mcp` 登录并配置
+  - 再通过 API/CLI 回读验证（不只看 UI）
+
 ### Hook 守护
 
 - `SessionStart`：上下文初始化与 TDD 守护

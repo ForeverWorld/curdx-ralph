@@ -178,6 +178,7 @@ If a command type is not found in the project, mark as "Not found" so task-plann
 
 <mandatory>
 During research, discover available verification tooling for autonomous E2E verification (VE tasks). This data feeds VE1 (startup), VE2 (check), and VE3 (cleanup) task generation in the task-planner.
+If web control panels are present (for example Nacos or RabbitMQ Management), also collect a control-panel automation matrix for MCP browser configuration.
 
 ### Detection Logic
 
@@ -214,6 +215,11 @@ Run these commands to detect available verification tooling:
    ls Dockerfile docker-compose.yml docker-compose.yaml .dockerignore 2>/dev/null || echo "No Docker files"
    ```
 
+7. **Control panel service detection** — detect services that usually require browser console setup:
+   ```bash
+   grep -RinE 'nacos|rabbitmq|rabbitmq_management|15672|8848' docker-compose*.y*ml k8s *.yaml *.yml 2>/dev/null || echo "No known control-panel services detected"
+   ```
+
 ### Output Format
 
 Add to research.md:
@@ -233,6 +239,19 @@ Add to research.md:
 **Project Type**: Web App / API / CLI / Mobile / Library
 **Verification Strategy**: Start dev server on port 3000, use curl to check health endpoint, use chrome-devtools-mcp for critical user flows / Build and verify import / Run CLI commands and check output
 ```
+
+When control-panel services are detected, also add:
+
+```markdown
+## Control Panel Targets
+
+| Service | URL | Auth Source | Bootstrap Creds | Config Goal | Verify Method |
+|---------|-----|-------------|-----------------|-------------|---------------|
+| Nacos | http://127.0.0.1:8848/nacos | .env / compose | nacos / nacos (bootstrap only) | <goal-specific config> | API readback + UI evidence |
+| RabbitMQ | http://127.0.0.1:15672 | .env / compose | guest / guest (localhost only) | <goal-specific config> | HTTP API or rabbitmqctl |
+```
+
+Use `${CLAUDE_PLUGIN_ROOT}/references/web-control-panel-ops.md` as the task-planning baseline when this section exists.
 
 If no MCP browser tooling is detected, output:
 

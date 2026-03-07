@@ -280,7 +280,7 @@ When .progress.md contains `## Reality Check (BEFORE)`, the goal is a fix-type a
 
 ## VE Task Generation (E2E Verification)
 
-> See also: `${CLAUDE_PLUGIN_ROOT}/references/quality-checkpoints.md` for VE format details and verify-fix-reverify loop. See `${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md` for VE placement rules within POC and TDD workflows.
+> See also: `${CLAUDE_PLUGIN_ROOT}/references/quality-checkpoints.md` for VE format details and verify-fix-reverify loop. See `${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md` for VE placement rules within POC and TDD workflows. For web consoles (Nacos/RabbitMQ), also use `${CLAUDE_PLUGIN_ROOT}/references/web-control-panel-ops.md`.
 
 <mandatory>
 When generating tasks, include VE (Verify E2E) tasks that spin up real infrastructure and test the built feature end-to-end.
@@ -298,6 +298,7 @@ Read the "Verification Tooling" section from research.md to determine project ty
 | CLI | Binary/script entry point | Run commands, check output |
 | Mobile | iOS/Android deps (react-native, flutter, xcode) | Simulator if available |
 | Library | No dev server, no UI | Build + import check only |
+| Control Panel Service | research.md has `## Control Panel Targets` | Add CP1-CP4 browser config flow |
 
 ### VE Task Templates
 
@@ -340,8 +341,51 @@ Generate VE tasks using this 3-task structure (startup, check, cleanup):
 - Max 5 VE tasks per spec: 1 startup + 1-3 checks + 1 cleanup
 - Commands come from research.md "Verification Tooling" section — never hardcode dev server commands or ports
 - If no tooling detected: generate 1 VE task (build + import check) + 1 cleanup (see Library/No-Tooling Fallback)
+- If `## Control Panel Targets` exists in research.md: generate CP tasks for each target service (Nacos/RabbitMQ/etc.)
 
 **Placement**: VE tasks appear after V6 (AC checklist) and before the PR Lifecycle phase (Phase 5 in POC-first workflow, Phase 4 in TDD workflow).
+
+### Control Panel Task Templates (Nacos/RabbitMQ style)
+
+When research.md includes `## Control Panel Targets`, append service-specific [VERIFY] tasks:
+
+```markdown
+- [ ] CP1 [VERIFY] Control panel startup: bring services online
+  - **Do**:
+    1. Start infra stack (docker compose or equivalent)
+    2. Wait for panel URL readiness (HTTP 200/login page marker)
+  - **Verify**: `curl -sf {{panel_url}} >/dev/null && echo CP1_PASS`
+  - **Done when**: Panel is reachable
+  - **Commit**: None
+
+- [ ] CP2 [VERIFY] Control panel configuration via chrome-devtools-mcp
+  - **Do**:
+    1. Open `{{panel_url}}` via MCP `chrome-devtools`
+    2. Login using creds from `{{auth_source}}`
+    3. Apply required config actions for this spec
+    4. Capture evidence (UI value/screenshot/log note)
+  - **Verify**: chrome-devtools-mcp flow completes and expected config appears
+  - **Done when**: Config is visible in panel and matches requirements
+  - **Commit**: None
+
+- [ ] CP3 [VERIFY] Non-UI verification of control panel config
+  - **Do**:
+    1. Verify config through service API or CLI (`{{verify_method}}`)
+  - **Verify**: verification command exits 0 with expected output
+  - **Done when**: API/CLI confirms config persisted
+  - **Commit**: None
+
+- [ ] CP4 [VERIFY] Control panel cleanup
+  - **Do**:
+    1. Stop temporary services/processes
+    2. Remove temporary artifacts
+  - **Verify**: no stale process/listener remains
+  - **Done when**: environment is clean
+  - **Commit**: None
+```
+
+If MCP `chrome-devtools` is unavailable, mark CP2 as blocked with:
+- `Run /curdx:mcp-doctor --install-missing`
 
 ### Quick Mode vs Normal Mode
 

@@ -109,6 +109,7 @@ Phase commands use the `commitSpec` setting from `.curdx-state.json` (set during
 - Default required MCP servers: `context7`, `chrome-devtools`
 - `--scope`: MCP config scope passed to `claude mcp add` (default: `user`)
 - `--required`: Override required server list (comma-separated)
+- For Nacos/RabbitMQ-style web consoles, install `chrome-devtools` MCP first so UI config tasks can run autonomously
 
 ## Directory Structure
 
