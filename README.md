@@ -1,82 +1,50 @@
+<div align="center">
+
+<img src="./assets/logo/curdx-logo.svg" alt="CURDX" width="760" />
+
 # CURDX
+
+**Spec-driven engineering workflow plugin for Claude Code**
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-CURDX is a **Claude Code** plugin repository built to standardize the full path from idea to delivery:
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Claude Code Plugin](https://img.shields.io/badge/Platform-Claude%20Code-6f42c1)](https://code.claude.com/docs/en/plugins)
+[![Quality Gates](https://img.shields.io/badge/CI-Quality%20Gates-2ea44f)](./.github/workflows/quality-gates.yml)
+[![Security Scan](https://img.shields.io/badge/Security-Trivy%20Scan-blue)](./.github/workflows/security-scan.yml)
 
-- use specs to drive research, requirements, design, and task planning
-- enforce quality guardrails with hooks during the coding session (TDD, security, context, tool usage)
-- package repeatable engineering actions as commands (implementation, refactoring, review, PR workflow)
-- bring reusable domain knowledge through skills
+`research -> requirements -> design -> tasks -> implement`
 
-If you want a reusable and auditable engineering workflow inside Claude Code, this repo is designed for exactly that.
+</div>
 
-## When CURDX is a Good Fit
+---
 
-- You want consistent spec-driven development across projects.
-- You want quality constraints during AI coding, not only after code is written.
-- You need an extensible combination of commands, agents, and skills.
-- You want to turn team practices into reusable plugin behavior.
+## Why CURDX
 
-## Core Capabilities
+CURDX is designed for teams that want Claude Code outputs to be:
 
-### 1) Spec Workflow (Main CURDX Path)
-
-End-to-end flow: `research -> requirements -> design -> tasks -> implement`
-
-- create new specs, resume execution, switch specs, and manage multi-directory specs
-- execute task loops with progress tracking
-- break down large initiatives with epic triage
-
-### 2) Hook-Based Guardrails
-
-CURDX wires multiple lifecycle hooks (see `hooks/hooks.json`):
-
-- `SessionStart`: load context and run TDD guard
-- `PreToolUse`: security reminder, tool routing, quick-mode guard
-- `PostToolUse`: file checks and context monitoring
-- `UserPromptSubmit`: TDD guard and hookify rules
-- `PreCompact` / `Stop`: state persistence and shutdown checks
-
-### 3) Command Set
-
-The repo ships practical slash commands for day-to-day engineering:
-
-- spec workflow commands
-- Git/PR support commands
-- hookify rule management commands
-- review and refactor commands
-
-### 4) Skills Library
-
-`skills/` contains reusable skill packs for backend, frontend, and engineering topics (`nextjs`, `spring-boot`, `vitest`, `vue`, `typescript-core`, etc.).
+- consistent: one shared spec workflow instead of ad-hoc prompting
+- auditable: state files, progress files, and reproducible command flow
+- safer: hook guardrails for tool routing, security reminders, and loop control
+- extensible: commands + agents + skills in one plugin repository
 
 ## Quick Start
 
-### Prerequisites
-
-- Claude Code installed
-- `bash` and `python3` available (used by hooks and validation scripts)
-- recommended: run inside a Git repository
-
-### Install and Load as Plugin
+### 1) Install and load plugin
 
 ```bash
 git clone https://github.com/ForeverWorld/curdx-ralph.git
 cd curdx-ralph
-
 claude --plugin-dir /absolute/path/to/curdx-ralph
 ```
 
-### First Run
-
-In Claude, run:
+### 2) Start a spec
 
 ```text
 /curdx:start my-feature your goal description
 ```
 
-Then continue through the workflow:
+### 3) Run full path
 
 ```text
 /curdx:requirements
@@ -85,187 +53,94 @@ Then continue through the workflow:
 /curdx:implement
 ```
 
+## What You Get
+
+### Spec Workflow
+
+- smart start/resume/switch across specs
+- execution loop with progress tracking
+- epic triage for large initiatives
+
+### Hook Guardrails
+
+- `SessionStart`: context bootstrap + TDD guard
+- `PreToolUse`: security reminder + tool redirect + quick-mode guard
+- `PostToolUse`: file checks + context monitor
+- `Stop`/`PreCompact`: loop continuity and state persistence
+
+### Commands
+
+- spec lifecycle commands (`/curdx:start`, `/curdx:tasks`, `/curdx:implement`, ...)
+- delivery commands (`/curdx:commit`, `/curdx:commit-push-pr`, `/curdx:review-pr`)
+- hookify commands (`/curdx:hookify`, `/curdx:hookify-configure`, ...)
+
+For the full command list and arguments, see [commands/help.md](./commands/help.md).
+
+### Skills
+
+`skills/` includes reusable packs across backend/frontend/engineering topics.
+
+For China-focused projects, `cn-java-frontend-architecture` provides:
+- Java + frontend architecture selection matrix
+- Docker deployment blueprints and caching/mirror guidance
+- optional Xinchuang readiness checklist (only when required)
+
 ## Relay Overload Auto-Retry
 
-When a relay/provider returns transient failures like `relay: 当前模型负载过高，请稍后重试`, use:
-
-```bash
-bash scripts/claude-auto-retry.sh
-```
-
-Useful options:
-
-- retry forever but exit on first successful run:
+When relay/provider errors occur (for example `relay: 当前模型负载过高，请稍后重试`):
 
 ```bash
 bash scripts/claude-auto-retry.sh --stop-on-success
 ```
 
-- tune backoff window:
+Useful examples:
 
 ```bash
-bash scripts/claude-auto-retry.sh --min-sleep 5 --max-sleep 300 --jitter-max 3
-```
-
-- load built-in relay presets:
-
-```bash
+# presets
 bash scripts/claude-auto-retry.sh --preset relay-common --preset cn-relay-common
+
+# custom retriable errors
+bash scripts/claude-auto-retry.sh --extra-transient "upstream timeout|provider overloaded"
+
+# custom non-retriable errors
+bash scripts/claude-auto-retry.sh --extra-non-retriable "insufficient quota|account suspended"
 ```
 
-- load a custom pattern file (version-controlled, team-friendly):
-
-```bash
-bash scripts/claude-auto-retry.sh --pattern-file .claude/retry/my-relay.patterns
-```
-
-- add custom relay-specific retriable errors without changing script code:
-
-```bash
-bash scripts/claude-auto-retry.sh \
-  --extra-transient "upstream connect error|provider overloaded|upstream timeout"
-```
-
-- add custom non-retriable errors (fail fast):
-
-```bash
-bash scripts/claude-auto-retry.sh \
-  --extra-non-retriable "insufficient quota|account suspended|billing inactive"
-```
-
-You can also set regex patterns via env vars:
-
-```bash
-export CLAUDE_RETRY_EXTRA_TRANSIENT_REGEX="gateway not ready|cluster warming up"
-export CLAUDE_RETRY_EXTRA_NON_RETRIABLE_REGEX="tenant disabled|invalid organization"
-bash scripts/claude-auto-retry.sh
-```
-
-Pattern file format (`--pattern-file`):
-
-```text
-# comment
-transient: upstream connect error|provider overloaded
-non_retriable: insufficient quota|account suspended
-# no prefix => transient
-gateway timeout
-```
-
-## Command Reference
-
-### Spec Workflow
-
-| Command | Description |
-| --- | --- |
-| `/curdx:start [name] [goal]` | Smart entry (new or resume) |
-| `/curdx:new <name> [goal]` | Create a new spec |
-| `/curdx:research` | Research phase |
-| `/curdx:requirements` | Requirements phase |
-| `/curdx:design` | Design phase |
-| `/curdx:tasks` | Task planning phase |
-| `/curdx:implement` | Execution loop |
-| `/curdx:status` | Show current status |
-| `/curdx:switch <name>` | Switch active spec |
-| `/curdx:cancel` | Cancel and clean state |
-| `/curdx:triage` | Decompose a large goal into specs |
-| `/curdx:refactor` | Sync spec docs after implementation |
-| `/curdx:index` | Build index hints |
-| `/curdx:feedback` | Submit feedback |
-| `/curdx:help` | Help |
-
-### Delivery and Review
-
-| Command | Description |
-| --- | --- |
-| `/curdx:commit` | Create a commit |
-| `/curdx:commit-push-pr` | Commit + push + open PR |
-| `/curdx:review-pr` | PR review workflow |
-| `/curdx:clean-gone` | Remove local branches deleted on remote |
-
-### Hookify
-
-| Command | Description |
-| --- | --- |
-| `/curdx:hookify` | Create hook rules |
-| `/curdx:hookify-list` | List configured rules |
-| `/curdx:hookify-configure` | Configure rules interactively |
-| `/curdx:hookify-help` | Hookify help |
-
-For detailed arguments and examples, see [commands/help.md](./commands/help.md).
+`claude-auto-retry.sh` fails fast for non-retriable errors (for example: `账户余额不足`, `insufficient balance`, `401/403/402`), so it will stop instead of looping.
 
 ## Repository Layout
 
 ```text
 curdx/
-├── .claude-plugin/         # plugin metadata (plugin.json)
-├── commands/               # slash command definitions
-├── agents/                 # sub-agent prompts
-├── hooks/
-│   ├── hooks.json          # hook event wiring
-│   └── scripts/            # hook scripts
-├── scripts/
-│   ├── claude-auto-retry.sh # continuous retry wrapper for transient relay/API failures
-│   ├── retry-presets/       # preset + template retry pattern files
-│   └── ci/                 # CI checks
-├── skills/                 # reusable skills
-├── references/             # workflow references
-├── templates/              # generation templates
-└── schemas/                # structured schemas
+├── .claude-plugin/          # plugin metadata
+├── commands/                # slash commands
+├── agents/                  # sub-agent prompts
+├── hooks/                   # hook wiring + scripts
+├── scripts/                 # CI + retry tooling
+├── skills/                  # reusable skill packs
+├── references/              # workflow references
+├── templates/               # phase templates
+├── schemas/                 # structured schemas
+└── assets/logo/             # README logo assets
 ```
 
-## Hook Logs and Debugging
+## Quality Gates
 
-Default log locations:
+### CI workflows
 
-- `~/.curdx/logs/hooks.log`
-- `~/.curdx/logs/hooks.jsonl`
-- `~/.curdx/logs/hooks.<hook_name>.log`
-- `~/.curdx/logs/hooks.<hook_name>.jsonl`
-- `~/.curdx/logs/sessions/<session>/...`
-
-Useful env vars:
-
-- `CURDX_HOOK_LOG=0`: disable hook logging
-- `CURDX_HOOK_LOG_LEVEL=DEBUG|INFO|WARN|ERROR`: minimum log level
-- `CURDX_HOOK_LOG_SPLIT=0`: disable per-hook split logs
-- `CURDX_HOOK_LOG_JSONL=0`: disable JSONL output
-- `CURDX_HOOK_LOG_SESSION_SPLIT=0`: disable per-session split logs
-
-Live tail:
-
-```bash
-tail -f ~/.curdx/logs/hooks.log
-tail -f ~/.curdx/logs/hooks.tool_redirect.log
-```
-
-Summarize logs:
-
-```bash
-python3 hooks/scripts/analyze_hook_logs.py --since-minutes 60
-python3 hooks/scripts/analyze_hook_logs.py --session <session-id> --since-minutes 180
-```
-
-## CI and Local Validation
-
-GitHub Actions workflows validate:
-
-- `.github/workflows/quality-gates.yml`
-  - shell/python syntax in hook scripts
+- [`.github/workflows/quality-gates.yml`](./.github/workflows/quality-gates.yml)
+  - shell/python syntax
+  - plugin contract checks
+  - policy checks
   - hook behavior tests (real subprocess execution, no mocks)
-  - plugin manifest metadata
-  - Claude plugin contract checks (hooks path integrity, command frontmatter)
-  - skill frontmatter
-  - local markdown links
-  - forbidden local-state files
-  - workflow hardening rules
-- `.github/workflows/security-scan.yml`
-  - Trivy vulnerability + secret scan (`CRITICAL,HIGH`)
+- [`.github/workflows/security-scan.yml`](./.github/workflows/security-scan.yml)
+  - Trivy vulnerability + secret scanning (`CRITICAL,HIGH`)
 
-Run locally:
+### Local validation
 
 ```bash
-bash -n hooks/scripts/*.sh
-python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py
+bash -n hooks/scripts/*.sh scripts/*.sh
+python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py tests/hooks/*.py
 python3 scripts/ci/check_plugin_manifest.py
 python3 scripts/ci/check_claude_plugin_contract.py
 python3 scripts/ci/check_skills_frontmatter.py
@@ -273,51 +148,27 @@ python3 scripts/ci/check_local_links.py
 python3 scripts/ci/check_forbidden_files.py
 python3 scripts/ci/check_workflow_hardening.py
 python3 -m unittest discover -s tests/hooks -p 'test_*.py'
+claude plugin validate .
 ```
-
-## Development Notes
-
-### Add a Command
-
-1. Create a new `*.md` in `commands/`
-2. Fill frontmatter (at least `description`)
-3. Update README/help docs for discoverability
-
-### Add a Hook
-
-1. Register event + matcher in `hooks/hooks.json`
-2. Add implementation script in `hooks/scripts/`
-3. Run syntax checks locally
-4. Verify log output and behavior
-
-### Add a Skill
-
-1. Create `skills/<skill-name>/SKILL.md`
-2. Keep frontmatter complete
-3. Validate with `scripts/ci/check_skills_frontmatter.py`
 
 ## FAQ
 
-### `/curdx:start` stops and does not continue automatically
+### `/curdx:start` stopped unexpectedly
 
-Run `/curdx:status` first. In most cases, CURDX is waiting for your confirmation before moving to the next phase.
+Run `/curdx:status`. CURDX may be waiting for a phase confirmation or approval gate.
 
 ### Task loop keeps failing
 
-Use `/curdx:cancel` to clean current state, then resume with `/curdx:start` or `/curdx:implement`.
+Run `/curdx:cancel` to clear state, then resume with `/curdx:start` or `/curdx:implement`.
 
-### Hooks feel too strict during exploration
+### Hooks feel strict during exploration
 
-Tune behavior with env vars first. Avoid deleting hooks directly unless you are intentionally removing policy.
+Tune via environment variables first; avoid deleting hooks directly.
 
 ## Contributing
 
-Issues and PRs are welcome. In PR descriptions, include:
-
-- motivation
-- scope (`commands`, `hooks`, `skills`, etc.)
-- verification steps (local commands or screenshots)
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution and validation requirements.
 
 ## License
 
-MIT license terms are available in [LICENSE](./LICENSE).
+MIT, see [LICENSE](./LICENSE).

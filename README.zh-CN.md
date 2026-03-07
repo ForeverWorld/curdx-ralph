@@ -1,82 +1,50 @@
+<div align="center">
+
+<img src="./assets/logo/curdx-logo.svg" alt="CURDX" width="760" />
+
 # CURDX
+
+**面向 Claude Code 的 Spec 驱动工程化工作流插件**
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-CURDX 是一个面向 **Claude Code** 的插件仓库，目标是把“从想法到交付”的开发链路标准化：
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Claude Code Plugin](https://img.shields.io/badge/Platform-Claude%20Code-6f42c1)](https://code.claude.com/docs/en/plugins)
+[![Quality Gates](https://img.shields.io/badge/CI-Quality%20Gates-2ea44f)](./.github/workflows/quality-gates.yml)
+[![Security Scan](https://img.shields.io/badge/Security-Trivy%20Scan-blue)](./.github/workflows/security-scan.yml)
 
-- 用 spec 驱动调研、需求、设计、任务拆解
-- 用 hooks 在会话期间做质量守护（TDD、安全、上下文、工具使用）
-- 用命令把常见工程动作沉淀成可复用流程（实现、重构、评审、PR）
-- 用 skills 注入可复用的领域知识
+`research -> requirements -> design -> tasks -> implement`
 
-如果你希望在 Claude Code 里落地一套可复用、可审计、可持续迭代的工程流程，这个仓库就是为这个目的设计的。
+</div>
 
-## 适用场景
+---
 
-- 你希望团队稳定执行 spec-driven 开发。
-- 你希望 AI 编码过程自带质量约束，而不是只做事后检查。
-- 你需要可扩展的命令、agent、skill 组合。
-- 你希望把团队实践固化成插件能力。
+## 为什么用 CURDX
 
-## 核心能力
+CURDX 适合希望 Claude Code 产出具备以下特性的团队：
 
-### 1) Spec 工作流（CURDX 主线）
-
-完整流程：`research -> requirements -> design -> tasks -> implement`
-
-- 支持新建 spec、恢复执行、切换 spec、多目录 specs
-- 支持任务循环执行与进度追踪
-- 支持 Epic 拆解（triage）
-
-### 2) Hook 质量守护
-
-CURDX 内置多种会话生命周期钩子（见 `hooks/hooks.json`）：
-
-- `SessionStart`：加载上下文并执行 TDD 守护
-- `PreToolUse`：安全提醒、工具路由、快速模式约束
-- `PostToolUse`：文件检查与上下文监控
-- `UserPromptSubmit`：TDD 守护与 hookify 规则
-- `PreCompact` / `Stop`：状态持久化与收尾检查
-
-### 3) 命令体系
-
-仓库提供面向日常开发的 slash commands：
-
-- spec 主线命令
-- Git/PR 辅助命令
-- hookify 规则管理命令
-- 评审与重构命令
-
-### 4) Skills 库
-
-`skills/` 提供可复用技能包，覆盖前后端和工程化主题（如 `nextjs`、`spring-boot`、`vitest`、`vue`、`typescript-core`）。
+- 一致性：统一 spec 工作流，减少随意提示词
+- 可审计：状态文件与进度文件可追溯
+- 更稳健：通过 hooks 做工具路由、安全提醒、循环控制
+- 可扩展：commands + agents + skills 一体化沉淀
 
 ## 快速开始
 
-### 前置要求
-
-- 已安装 Claude Code
-- 可用的 `bash` 与 `python3`（hooks 和校验脚本依赖）
-- 建议在 Git 仓库内使用
-
-### 安装与加载
+### 1）安装并加载插件
 
 ```bash
 git clone https://github.com/ForeverWorld/curdx-ralph.git
 cd curdx-ralph
-
 claude --plugin-dir /absolute/path/to/curdx-ralph
 ```
 
-### 首次运行
-
-在 Claude 会话中执行：
+### 2）启动 spec
 
 ```text
 /curdx:start my-feature 你的目标描述
 ```
 
-然后按流程推进：
+### 3）推进完整流程
 
 ```text
 /curdx:requirements
@@ -85,187 +53,92 @@ claude --plugin-dir /absolute/path/to/curdx-ralph
 /curdx:implement
 ```
 
-## 中转站过载自动重试
+## 你能得到什么
 
-当中转站/上游出现临时错误（例如 `relay: 当前模型负载过高，请稍后重试`）时，使用：
+### Spec 工作流
 
-```bash
-bash scripts/claude-auto-retry.sh
-```
+- 支持 spec 新建、恢复、切换
+- 支持任务循环执行与进度追踪
+- 支持 epic 拆解大需求
 
-常用参数：
+### Hook 守护
 
-- 一直重试，但首次成功后退出：
+- `SessionStart`：上下文加载 + TDD 守护
+- `PreToolUse`：安全提醒 + 工具重定向 + 快速模式约束
+- `PostToolUse`：文件检查 + 上下文监控
+- `Stop`/`PreCompact`：循环续跑与状态持久化
+
+### 命令体系
+
+- spec 主线命令（`/curdx:start`、`/curdx:tasks`、`/curdx:implement` 等）
+- 交付命令（`/curdx:commit`、`/curdx:commit-push-pr`、`/curdx:review-pr`）
+- hookify 命令（`/curdx:hookify`、`/curdx:hookify-configure` 等）
+
+完整命令与参数见 [commands/help.md](./commands/help.md)。
+
+### Skills
+
+`skills/` 内置前后端与工程化技能包。
+
+针对国内项目，`cn-java-frontend-architecture` 提供：
+- Java + 前端架构选型矩阵
+- Docker 部署蓝图与镜像/缓存建议
+- 按需启用的信创适配清单（非默认必选）
+
+## 中转过载自动重试
+
+当中转站/上游错误出现（例如 `relay: 当前模型负载过高，请稍后重试`）：
 
 ```bash
 bash scripts/claude-auto-retry.sh --stop-on-success
 ```
 
-- 调整退避窗口：
+常用示例：
 
 ```bash
-bash scripts/claude-auto-retry.sh --min-sleep 5 --max-sleep 300 --jitter-max 3
-```
-
-- 加载内置中转站预设：
-
-```bash
+# 使用预设
 bash scripts/claude-auto-retry.sh --preset relay-common --preset cn-relay-common
+
+# 追加可重试错误
+bash scripts/claude-auto-retry.sh --extra-transient "upstream timeout|provider overloaded"
+
+# 追加不可重试错误
+bash scripts/claude-auto-retry.sh --extra-non-retriable "insufficient quota|account suspended"
 ```
-
-- 加载自定义规则文件（适合团队长期维护）：
-
-```bash
-bash scripts/claude-auto-retry.sh --pattern-file .claude/retry/my-relay.patterns
-```
-
-- 不改脚本代码，直接追加“其他中转站”的可重试错误：
-
-```bash
-bash scripts/claude-auto-retry.sh \
-  --extra-transient "upstream connect error|provider overloaded|upstream timeout"
-```
-
-- 追加不可重试错误（快速失败）：
-
-```bash
-bash scripts/claude-auto-retry.sh \
-  --extra-non-retriable "insufficient quota|account suspended|billing inactive"
-```
-
-也可以用环境变量配置正则：
-
-```bash
-export CLAUDE_RETRY_EXTRA_TRANSIENT_REGEX="gateway not ready|cluster warming up"
-export CLAUDE_RETRY_EXTRA_NON_RETRIABLE_REGEX="tenant disabled|invalid organization"
-bash scripts/claude-auto-retry.sh
-```
-
-规则文件格式（`--pattern-file`）：
-
-```text
-# 注释
-transient: upstream connect error|provider overloaded
-non_retriable: insufficient quota|account suspended
-# 不加前缀默认按 transient 处理
-gateway timeout
-```
-
-## 命令参考
-
-### Spec 工作流
-
-| Command | 说明 |
-| --- | --- |
-| `/curdx:start [name] [goal]` | 智能入口（新建或恢复） |
-| `/curdx:new <name> [goal]` | 新建 spec |
-| `/curdx:research` | 调研阶段 |
-| `/curdx:requirements` | 需求阶段 |
-| `/curdx:design` | 设计阶段 |
-| `/curdx:tasks` | 任务拆解阶段 |
-| `/curdx:implement` | 执行循环 |
-| `/curdx:status` | 查看当前状态 |
-| `/curdx:switch <name>` | 切换活动 spec |
-| `/curdx:cancel` | 取消并清理状态 |
-| `/curdx:triage` | 大需求拆分为多个 spec |
-| `/curdx:refactor` | 执行后回写 spec 文档 |
-| `/curdx:index` | 建立索引提示 |
-| `/curdx:feedback` | 提交反馈 |
-| `/curdx:help` | 帮助 |
-
-### 交付与评审
-
-| Command | 说明 |
-| --- | --- |
-| `/curdx:commit` | 创建提交 |
-| `/curdx:commit-push-pr` | 提交 + 推送 + 创建 PR |
-| `/curdx:review-pr` | PR 评审流程 |
-| `/curdx:clean-gone` | 清理远端已删的本地分支 |
-
-### Hookify
-
-| Command | 说明 |
-| --- | --- |
-| `/curdx:hookify` | 创建 hook 规则 |
-| `/curdx:hookify-list` | 查看已配置规则 |
-| `/curdx:hookify-configure` | 交互式配置规则 |
-| `/curdx:hookify-help` | Hookify 帮助 |
-
-详细参数与示例可见 [commands/help.md](./commands/help.md)。
 
 ## 仓库结构
 
 ```text
 curdx/
-├── .claude-plugin/         # 插件元信息（plugin.json）
-├── commands/               # slash command 定义
-├── agents/                 # 子 Agent 提示词
-├── hooks/
-│   ├── hooks.json          # hook 事件注册
-│   └── scripts/            # hook 脚本实现
-├── scripts/
-│   ├── claude-auto-retry.sh # 中转/API 临时错误的持续重试包装脚本
-│   ├── retry-presets/       # 预设与模板规则文件
-│   └── ci/                 # CI 校验脚本
-├── skills/                 # 可复用技能包
-├── references/             # 流程参考资料
-├── templates/              # 生成模板
-└── schemas/                # 结构化 schema
+├── .claude-plugin/          # 插件元信息
+├── commands/                # slash 命令
+├── agents/                  # 子 agent 提示词
+├── hooks/                   # hook 注册与脚本
+├── scripts/                 # CI 与重试工具
+├── skills/                  # 可复用技能包
+├── references/              # 流程参考资料
+├── templates/               # 各阶段模板
+├── schemas/                 # 结构化 schema
+└── assets/logo/             # README logo 资源
 ```
 
-## Hook 日志与调试
+## 质量门禁
 
-默认日志位置：
+### CI 工作流
 
-- `~/.curdx/logs/hooks.log`
-- `~/.curdx/logs/hooks.jsonl`
-- `~/.curdx/logs/hooks.<hook_name>.log`
-- `~/.curdx/logs/hooks.<hook_name>.jsonl`
-- `~/.curdx/logs/sessions/<session>/...`
-
-常用环境变量：
-
-- `CURDX_HOOK_LOG=0`：关闭 hook 日志
-- `CURDX_HOOK_LOG_LEVEL=DEBUG|INFO|WARN|ERROR`：设置最低日志级别
-- `CURDX_HOOK_LOG_SPLIT=0`：关闭按 hook 分文件
-- `CURDX_HOOK_LOG_JSONL=0`：关闭 JSONL 输出
-- `CURDX_HOOK_LOG_SESSION_SPLIT=0`：关闭按会话分目录
-
-实时查看：
-
-```bash
-tail -f ~/.curdx/logs/hooks.log
-tail -f ~/.curdx/logs/hooks.tool_redirect.log
-```
-
-日志摘要分析：
-
-```bash
-python3 hooks/scripts/analyze_hook_logs.py --since-minutes 60
-python3 hooks/scripts/analyze_hook_logs.py --session <session-id> --since-minutes 180
-```
-
-## CI 与本地校验
-
-GitHub Actions 会执行以下检查：
-
-- `.github/workflows/quality-gates.yml`
-  - hooks 脚本 shell/python 语法
+- [`.github/workflows/quality-gates.yml`](./.github/workflows/quality-gates.yml)
+  - shell/python 语法检查
+  - 插件契约检查
+  - 策略检查
   - hook 行为测试（真实子进程执行，无 mock）
-  - 插件清单元数据
-  - Claude 插件契约校验（hooks 路径完整性、command frontmatter）
-  - skills frontmatter
-  - markdown 本地链接
-  - 本地状态文件误提交防护
-  - workflow 安全硬化规则
-- `.github/workflows/security-scan.yml`
+- [`.github/workflows/security-scan.yml`](./.github/workflows/security-scan.yml)
   - Trivy 漏洞与敏感信息扫描（`CRITICAL,HIGH`）
 
-本地可直接执行：
+### 本地校验
 
 ```bash
-bash -n hooks/scripts/*.sh
-python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py
+bash -n hooks/scripts/*.sh scripts/*.sh
+python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py tests/hooks/*.py
 python3 scripts/ci/check_plugin_manifest.py
 python3 scripts/ci/check_claude_plugin_contract.py
 python3 scripts/ci/check_skills_frontmatter.py
@@ -273,51 +146,27 @@ python3 scripts/ci/check_local_links.py
 python3 scripts/ci/check_forbidden_files.py
 python3 scripts/ci/check_workflow_hardening.py
 python3 -m unittest discover -s tests/hooks -p 'test_*.py'
+claude plugin validate .
 ```
-
-## 开发说明
-
-### 新增命令
-
-1. 在 `commands/` 下新增 `*.md`
-2. 填写 frontmatter（至少 `description`）
-3. 在 README/帮助文档补充说明
-
-### 新增 Hook
-
-1. 在 `hooks/hooks.json` 注册事件和 matcher
-2. 在 `hooks/scripts/` 新增实现脚本
-3. 本地跑语法检查
-4. 验证日志与行为符合预期
-
-### 新增 Skill
-
-1. 新建 `skills/<skill-name>/SKILL.md`
-2. 保持 frontmatter 完整
-3. 用 `scripts/ci/check_skills_frontmatter.py` 校验
 
 ## 常见问题
 
-### `/curdx:start` 停住不继续
+### `/curdx:start` 中途停了
 
-先执行 `/curdx:status` 查看 phase，通常是等待你确认后再进入下一阶段。
+先执行 `/curdx:status`，多数情况是等待你确认阶段或审批节点。
 
 ### 任务循环反复失败
 
-先用 `/curdx:cancel` 清理状态，再通过 `/curdx:start` 或 `/curdx:implement` 恢复。
+执行 `/curdx:cancel` 清理状态，再用 `/curdx:start` 或 `/curdx:implement` 继续。
 
-### Hook 太严格，影响探索速度
+### Hook 太严格
 
-建议先通过环境变量调低约束，再逐步恢复，不建议直接删 hooks。
+优先通过环境变量调优，不建议直接删除 hooks。
 
 ## 贡献
 
-欢迎提交 Issue / PR。PR 描述建议包含：
+贡献规范与校验要求见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-- 改动动机
-- 影响范围（`commands` / `hooks` / `skills`）
-- 验证方式（本地命令或截图）
+## 许可证
 
-## License
-
-MIT 许可证条款见 [LICENSE](./LICENSE)。
+MIT，详见 [LICENSE](./LICENSE)。
