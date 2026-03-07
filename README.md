@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/logo/curdx-logo.svg" alt="CURDX" width="760" />
+<img src="./assets/logo/curdx-logo-en.png" alt="CURDX" width="760" />
 
 # CURDX
 
@@ -19,122 +19,167 @@
 
 ---
 
-## Why CURDX
+## Overview
 
-CURDX is designed for teams that want Claude Code outputs to be:
+CURDX is a production-oriented Claude Code plugin for teams that want a repeatable, auditable, and guarded engineering workflow.
 
-- consistent: one shared spec workflow instead of ad-hoc prompting
-- auditable: state files, progress files, and reproducible command flow
-- safer: hook guardrails for tool routing, security reminders, and loop control
-- extensible: commands + agents + skills in one plugin repository
+It combines:
+- a spec lifecycle (`research` to `implement`)
+- autonomous task execution with state tracking
+- hook-based safety guardrails
+- reusable skills, agents, templates, and references in one repository
 
-## Quick Start
+## Why Teams Use CURDX
 
-### 1) Install and load plugin
+- Consistency: one shared workflow instead of prompt-by-prompt improvisation
+- Auditability: explicit state and progress artifacts per spec
+- Safety: pre/post hook checks, tool routing, and loop controls
+- Throughput: fast path (`--quick`) and robust path (interactive phase-by-phase)
+- Extensibility: add commands, skills, and agents without changing core architecture
+
+## Installation
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/ForeverWorld/curdx-ralph.git
 cd curdx-ralph
+```
+
+### 2. Load as Claude Code plugin
+
+```bash
 claude --plugin-dir /absolute/path/to/curdx-ralph
 ```
 
-### 2) Start a spec
+### 3. Validate plugin contract (recommended)
 
-```text
-/curdx:start my-feature your goal description
+```bash
+claude plugin validate .
 ```
 
-### 3) Run full path
+## Quick Start
+
+### Standard mode (recommended for important features)
 
 ```text
+/curdx:start user-auth Add JWT authentication
 /curdx:requirements
 /curdx:design
 /curdx:tasks
 /curdx:implement
 ```
 
-## What You Get
-
-### Spec Workflow
-
-- smart start/resume/switch across specs
-- execution loop with progress tracking
-- epic triage for large initiatives
-
-### Hook Guardrails
-
-- `SessionStart`: context bootstrap + TDD guard
-- `PreToolUse`: security reminder + tool redirect + quick-mode guard
-- `PostToolUse`: file checks + context monitor
-- `Stop`/`PreCompact`: loop continuity and state persistence
-
-### Commands
-
-- spec lifecycle commands (`/curdx:start`, `/curdx:tasks`, `/curdx:implement`, ...)
-- delivery commands (`/curdx:commit`, `/curdx:commit-push-pr`, `/curdx:review-pr`)
-- hookify commands (`/curdx:hookify`, `/curdx:hookify-configure`, ...)
-
-For the full command list and arguments, see [commands/help.md](./commands/help.md).
-
-### Skills
-
-`skills/` includes reusable packs across backend/frontend/engineering topics.
-
-For China-focused projects, `cn-java-frontend-architecture` provides:
-- Java + frontend architecture selection matrix
-- Docker deployment blueprints and caching/mirror guidance
-- optional Xinchuang readiness checklist (only when required)
-
-## Relay Overload Auto-Retry
-
-When relay/provider errors occur (for example `relay: 当前模型负载过高，请稍后重试`):
-
-```bash
-bash scripts/claude-auto-retry.sh --stop-on-success
-```
-
-Useful examples:
-
-```bash
-# presets
-bash scripts/claude-auto-retry.sh --preset relay-common --preset cn-relay-common
-
-# custom retriable errors
-bash scripts/claude-auto-retry.sh --extra-transient "upstream timeout|provider overloaded"
-
-# custom non-retriable errors
-bash scripts/claude-auto-retry.sh --extra-non-retriable "insufficient quota|account suspended"
-```
-
-`claude-auto-retry.sh` fails fast for non-retriable errors (for example: `账户余额不足`, `insufficient balance`, `401/403/402`), so it will stop instead of looping.
-
-## Repository Layout
+### Quick mode (faster, fewer prompts)
 
 ```text
-curdx/
-├── .claude-plugin/          # plugin metadata
-├── commands/                # slash commands
-├── agents/                  # sub-agent prompts
-├── hooks/                   # hook wiring + scripts
-├── scripts/                 # CI + retry tooling
-├── skills/                  # reusable skill packs
-├── references/              # workflow references
-├── templates/               # phase templates
-├── schemas/                 # structured schemas
-└── assets/logo/             # README logo assets
+/curdx:start user-auth Add JWT authentication --quick
 ```
 
-## Quality Gates
+## Core Workflow
+
+### Phase chain
+
+1. `research`: constraints, options, feasibility
+2. `requirements`: user-facing and system requirements
+3. `design`: architecture and implementation strategy
+4. `tasks`: executable task breakdown
+5. `implement`: autonomous loop with verification and progress updates
+
+### Execution model
+
+- Task-by-task delegation with fresh context per iteration
+- Retries with configurable max limits
+- Optional iterative recovery mode for failed tasks
+- Progress persistence in `.progress.md`
+
+## Command Reference
+
+### Spec lifecycle
+
+| Command | Purpose |
+|---|---|
+| `/curdx:start [name] [goal]` | Smart entry (resume existing or create new) |
+| `/curdx:new <name> [goal]` | Create a new spec directly |
+| `/curdx:research` | Run or re-run research |
+| `/curdx:requirements` | Generate requirements |
+| `/curdx:design` | Generate technical design |
+| `/curdx:tasks` | Generate implementation tasks |
+| `/curdx:implement` | Start execution loop |
+| `/curdx:status` | Show spec status and progress |
+| `/curdx:switch <name-or-path>` | Switch active spec |
+| `/curdx:cancel [name-or-path]` | Cancel active loop and clean state |
+
+### Supporting commands
+
+| Command | Purpose |
+|---|---|
+| `/curdx:triage [epic-name] [goal]` | Split large initiatives into dependency-aware specs |
+| `/curdx:index` | Index codebase and external resources into specs |
+| `/curdx:refactor` | Update spec docs after execution |
+| `/curdx:review-pr [aspects]` | Multi-agent PR review |
+| `/curdx:commit` | Create commit |
+| `/curdx:commit-push-pr` | Commit, push, and open PR |
+| `/curdx:hookify` | Build behavior guard hooks from conversation analysis |
+| `/curdx:hookify-list` | List hookify rules |
+| `/curdx:hookify-configure` | Enable/disable hookify rules |
+| `/curdx:help` | Show command help |
+
+## Important Options
+
+- `/curdx:start`
+  - `--fresh`: force new spec
+  - `--quick`: skip interactive phase gates
+  - `--commit-spec` / `--no-commit-spec`: control spec commits
+  - `--specs-dir <path>`: create spec in a configured directory
+  - `--tasks-size fine|coarse`: task granularity hint
+- `/curdx:implement`
+  - `--max-task-iterations <n>`: max retries per task
+  - `--max-global-iterations <n>`: safety cap for loop iterations
+  - `--recovery-mode`: auto-generate and execute fix tasks on failure
+
+## Spec Storage Model
+
+Default structure:
+
+```text
+./specs/
+├── .current-spec
+└── <spec-name>/
+    ├── .curdx-state.json
+    ├── .progress.md
+    ├── research.md
+    ├── requirements.md
+    ├── design.md
+    └── tasks.md
+```
+
+Multi-directory specs are supported via `.claude/curdx.local.md`:
+
+```yaml
+---
+specs_dirs:
+  - ./specs
+  - ./packages/api/specs
+  - ./packages/web/specs
+---
+```
+
+## Guardrails and Quality
+
+### Hook guardrails
+
+- `SessionStart`: context bootstrap and TDD guard
+- `PreToolUse`: security reminder, tool redirect, quick-mode constraints
+- `PostToolUse`: file checks and context monitor
+- `Stop`/`PreCompact`: loop continuity and state persistence
 
 ### CI workflows
 
 - [`.github/workflows/quality-gates.yml`](./.github/workflows/quality-gates.yml)
-  - shell/python syntax
-  - plugin contract checks
-  - policy checks
-  - hook behavior tests (real subprocess execution, no mocks)
+  - syntax checks, plugin contract checks, policy checks, hook behavior tests
 - [`.github/workflows/security-scan.yml`](./.github/workflows/security-scan.yml)
-  - Trivy vulnerability + secret scanning (`CRITICAL,HIGH`)
+  - Trivy vulnerability and secret scanning (`CRITICAL,HIGH`)
 
 ### Local validation
 
@@ -151,19 +196,46 @@ python3 -m unittest discover -s tests/hooks -p 'test_*.py'
 claude plugin validate .
 ```
 
-## FAQ
+## Relay Overload Auto-Retry
 
-### `/curdx:start` stopped unexpectedly
+When relay/provider overload errors occur, use:
 
-Run `/curdx:status`. CURDX may be waiting for a phase confirmation or approval gate.
+```bash
+bash scripts/claude-auto-retry.sh --stop-on-success
+```
 
-### Task loop keeps failing
+Examples:
 
-Run `/curdx:cancel` to clear state, then resume with `/curdx:start` or `/curdx:implement`.
+```bash
+bash scripts/claude-auto-retry.sh --preset relay-common --preset cn-relay-common
+bash scripts/claude-auto-retry.sh --extra-transient "upstream timeout|provider overloaded"
+bash scripts/claude-auto-retry.sh --extra-non-retriable "insufficient quota|account suspended"
+```
 
-### Hooks feel strict during exploration
+## Repository Layout
 
-Tune via environment variables first; avoid deleting hooks directly.
+```text
+curdx/
+├── .claude-plugin/          # plugin metadata
+├── commands/                # slash command definitions
+├── agents/                  # phase and execution sub-agent prompts
+├── hooks/                   # hook wiring and scripts
+├── scripts/                 # CI checks and retry utilities
+├── skills/                  # reusable skill packs
+├── references/              # workflow references
+├── templates/               # artifact templates
+├── schemas/                 # structured schemas
+└── assets/logo/             # README logo assets
+```
+
+## Troubleshooting
+
+- `/curdx:start` stopped unexpectedly:
+  - Run `/curdx:status`; it usually waits for a phase transition or approval gate.
+- Task loop keeps failing:
+  - Retry with `/curdx:implement --recovery-mode` or clear state via `/curdx:cancel`.
+- Ambiguous spec name across directories:
+  - Use full path in `/curdx:switch <spec-path>`.
 
 ## Contributing
 
