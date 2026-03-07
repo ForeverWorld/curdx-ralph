@@ -11,3 +11,4 @@ All notable changes to this project are documented in this file.
 - CI hardening checks for workflow action pinning and forbidden local-state files
 - MCP-only generic web control panel automation guidance (research + task-planner + VE checkpoints)
 - Marketplace install support via `.claude-plugin/marketplace.json` (`/plugin marketplace add` + `/plugin install`)
+- Preflight one-click installer script (`scripts/install-curdx.sh`) and team auto-install settings template

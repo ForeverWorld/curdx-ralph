@@ -52,7 +52,19 @@ claude plugin marketplace add ForeverWorld/curdx-ralph
 claude plugin install curdx@curdx-marketplace
 ```
 
-### 方案 B：本地目录加载
+### 方案 B：预检查 + 一键安装脚本
+
+```bash
+bash scripts/install-curdx.sh
+```
+
+安装时顺带配置 MCP：
+
+```bash
+bash scripts/install-curdx.sh --with-mcp
+```
+
+### 方案 C：本地目录加载
 
 ### 1. 克隆仓库
 
@@ -71,6 +83,21 @@ claude --plugin-dir /absolute/path/to/curdx-ralph
 
 ```bash
 claude plugin validate .
+```
+
+### 团队自动安装（项目设置）
+
+在 `.claude/settings.json` 中加入：
+
+```json
+{
+  "extraKnownMarketplaces": [
+    "github:ForeverWorld/curdx-ralph"
+  ],
+  "enabledPlugins": [
+    "curdx@curdx-marketplace"
+  ]
+}
 ```
 
 ## 快速上手

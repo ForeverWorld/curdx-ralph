@@ -1,0 +1,8 @@
+{
+  "extraKnownMarketplaces": [
+    "github:ForeverWorld/curdx-ralph"
+  ],
+  "enabledPlugins": [
+    "curdx@curdx-marketplace"
+  ]
+}

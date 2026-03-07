@@ -53,7 +53,19 @@ claude plugin marketplace add ForeverWorld/curdx-ralph
 claude plugin install curdx@curdx-marketplace
 ```
 
-### Option B: Local plugin directory
+### Option B: One-click install with preflight checks
+
+```bash
+bash scripts/install-curdx.sh
+```
+
+Include MCP setup in the same run:
+
+```bash
+bash scripts/install-curdx.sh --with-mcp
+```
+
+### Option C: Local plugin directory
 
 ### 1. Clone the repository
 
@@ -72,6 +84,21 @@ claude --plugin-dir /absolute/path/to/curdx-ralph
 
 ```bash
 claude plugin validate .
+```
+
+### Team Auto-Install (project settings)
+
+Add to `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": [
+    "github:ForeverWorld/curdx-ralph"
+  ],
+  "enabledPlugins": [
+    "curdx@curdx-marketplace"
+  ]
+}
 ```
 
 ## Quick Start
