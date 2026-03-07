@@ -1,0 +1,32 @@
+# Common transient gateway/provider failures
+transient: overloaded
+transient: service unavailable
+transient: temporarily unavailable
+transient: bad gateway
+transient: gateway timeout
+transient: upstream timeout
+transient: upstream connect error
+transient: upstream request timeout
+transient: connect timeout
+transient: connection reset
+transient: connection refused
+transient: server_error
+transient: rate[_ -]?limit
+transient: 429
+transient: 500
+transient: 502
+transient: 503
+transient: 504
+transient: 529
+
+# Fail-fast authentication/permission type errors
+non_retriable: access denied
+non_retriable: invalid user
+non_retriable: authentication
+non_retriable: authorization
+non_retriable: permission denied
+non_retriable: forbidden
+non_retriable: invalid[_ -]?request
+non_retriable: unsupported
+non_retriable: 401
+non_retriable: 403

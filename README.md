@@ -85,6 +85,72 @@ Then continue through the workflow:
 /curdx:implement
 ```
 
+## Relay Overload Auto-Retry
+
+When a relay/provider returns transient failures like `relay: 当前模型负载过高，请稍后重试`, use:
+
+```bash
+bash scripts/claude-auto-retry.sh
+```
+
+Useful options:
+
+- retry forever but exit on first successful run:
+
+```bash
+bash scripts/claude-auto-retry.sh --stop-on-success
+```
+
+- tune backoff window:
+
+```bash
+bash scripts/claude-auto-retry.sh --min-sleep 5 --max-sleep 300 --jitter-max 3
+```
+
+- load built-in relay presets:
+
+```bash
+bash scripts/claude-auto-retry.sh --preset relay-common --preset cn-relay-common
+```
+
+- load a custom pattern file (version-controlled, team-friendly):
+
+```bash
+bash scripts/claude-auto-retry.sh --pattern-file .claude/retry/my-relay.patterns
+```
+
+- add custom relay-specific retriable errors without changing script code:
+
+```bash
+bash scripts/claude-auto-retry.sh \
+  --extra-transient "upstream connect error|provider overloaded|upstream timeout"
+```
+
+- add custom non-retriable errors (fail fast):
+
+```bash
+bash scripts/claude-auto-retry.sh \
+  --extra-non-retriable "insufficient quota|account suspended|billing inactive"
+```
+
+You can also set regex patterns via env vars:
+
+```bash
+export CLAUDE_RETRY_EXTRA_TRANSIENT_REGEX="gateway not ready|cluster warming up"
+export CLAUDE_RETRY_EXTRA_NON_RETRIABLE_REGEX="tenant disabled|invalid organization"
+bash scripts/claude-auto-retry.sh
+```
+
+Pattern file format (`--pattern-file`):
+
+```text
+# comment
+transient: upstream connect error|provider overloaded
+non_retriable: insufficient quota|account suspended
+# no prefix => transient
+gateway timeout
+```
+
 ## Command Reference
 
 ### Spec Workflow
@@ -137,10 +203,14 @@ curdx/
 ├── hooks/
 │   ├── hooks.json          # hook event wiring
 │   └── scripts/            # hook scripts
+├── scripts/
+│   ├── claude-auto-retry.sh # continuous retry wrapper for transient relay/API failures
+│   ├── retry-presets/       # preset + template retry pattern files
+│   └── ci/                 # CI checks
 ├── skills/                 # reusable skills
 ├── references/             # workflow references
 ├── templates/              # generation templates
-└── scripts/ci/             # CI checks
+└── schemas/                # structured schemas
 ```
 
 ## Hook Logs and Debugging
@@ -177,12 +247,19 @@ python3 hooks/scripts/analyze_hook_logs.py --session <session-id> --since-minute
 
 ## CI and Local Validation
 
-GitHub Actions (`.github/workflows/quality-gates.yml`) validates:
+GitHub Actions workflows validate:
 
-- shell/python syntax in hook scripts
-- plugin manifest metadata
-- skill frontmatter
-- local markdown links
+- `.github/workflows/quality-gates.yml`
+  - shell/python syntax in hook scripts
+  - hook behavior tests (real subprocess execution, no mocks)
+  - plugin manifest metadata
+  - Claude plugin contract checks (hooks path integrity, command frontmatter)
+  - skill frontmatter
+  - local markdown links
+  - forbidden local-state files
+  - workflow hardening rules
+- `.github/workflows/security-scan.yml`
+  - Trivy vulnerability + secret scan (`CRITICAL,HIGH`)
 
 Run locally:
 
@@ -190,8 +267,12 @@ Run locally:
 bash -n hooks/scripts/*.sh
 python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py
 python3 scripts/ci/check_plugin_manifest.py
+python3 scripts/ci/check_claude_plugin_contract.py
 python3 scripts/ci/check_skills_frontmatter.py
 python3 scripts/ci/check_local_links.py
+python3 scripts/ci/check_forbidden_files.py
+python3 scripts/ci/check_workflow_hardening.py
+python3 -m unittest discover -s tests/hooks -p 'test_*.py'
 ```
 
 ## Development Notes
@@ -239,5 +320,4 @@ Issues and PRs are welcome. In PR descriptions, include:
 
 ## License
 
-`.claude-plugin/plugin.json` currently declares `MIT`.
-For public distribution, add a root `LICENSE` file to remove ambiguity.
+MIT license terms are available in [LICENSE](./LICENSE).

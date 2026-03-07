@@ -1,0 +1,18 @@
+# Chinese relay/provider transient messages
+transient: 当前模型负载过高
+transient: 服务暂时不可用
+transient: 上游超时
+transient: 上游连接失败
+transient: 请求超时
+transient: 网络波动
+transient: 渠道暂不可用
+transient: 无可用渠道
+
+# Typical non-retriable Chinese messages
+non_retriable: 认证失败
+non_retriable: 鉴权失败
+non_retriable: 密钥无效
+non_retriable: 权限不足
+non_retriable: 参数错误
+non_retriable: 余额不足
+non_retriable: 账户已禁用

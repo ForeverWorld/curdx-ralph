@@ -6,30 +6,45 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   hooks-syntax:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Validate shell hook syntax
-        run: bash -n hooks/scripts/*.sh
+        run: bash -n hooks/scripts/*.sh scripts/*.sh
 
       - name: Validate Python hook syntax
         run: python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py
+
+      - name: Run hook behavior tests
+        run: python3 -m unittest discover -s tests/hooks -p 'test_*.py'
 
   repo-policy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Validate plugin manifest metadata
         run: python3 scripts/ci/check_plugin_manifest.py
+
+      - name: Validate Claude plugin contract
+        run: python3 scripts/ci/check_claude_plugin_contract.py
 
       - name: Validate skill frontmatter
         run: python3 scripts/ci/check_skills_frontmatter.py
 
       - name: Validate local markdown links
         run: python3 scripts/ci/check_local_links.py
+
+      - name: Validate forbidden local-state files
+        run: python3 scripts/ci/check_forbidden_files.py
+
+      - name: Validate workflow hardening
+        run: python3 scripts/ci/check_workflow_hardening.py

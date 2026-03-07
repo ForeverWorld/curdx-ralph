@@ -583,7 +583,15 @@ def post_tool_use_context(context: str) -> str:
 
 def pre_tool_use_deny(reason: str) -> str:
     """Build PreToolUse deny JSON (blocks tool call)."""
-    return json.dumps({"permissionDecision": "deny", "reason": reason})
+    return json.dumps(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        }
+    )
 
 
 def pre_tool_use_context(context: str) -> str:

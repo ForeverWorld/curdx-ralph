@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _util import HookTimer, hook_log, pre_tool_use_context, pre_tool_use_deny
+from _util import HookTimer, hook_log, pre_tool_use_context
 
 # ── Configuration ────────────────────────────────────────────────────
 

@@ -1,0 +1,8 @@
+# Default owners for all repository paths.
+* @ForeverWorld
+
+# CI and policy changes require explicit maintainer review.
+/.github/ @ForeverWorld
+/hooks/ @ForeverWorld
+/commands/ @ForeverWorld
+/skills/ @ForeverWorld

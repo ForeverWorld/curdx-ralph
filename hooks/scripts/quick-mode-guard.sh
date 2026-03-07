@@ -58,9 +58,10 @@ fi
 # Quick mode is active — block AskUserQuestion
 ELAPSED=$(curdx_timer_elapsed)
 curdx_log "quick-mode-guard" "PreToolUse" "INFO" "blocking AskUserQuestion in quick mode" "spec=$SPEC_PATH" "dur=${ELAPSED}ms" "decision=deny"
-jq -n '{
+jq -n --arg reason "Quick mode active: do NOT ask the user any questions. Make opinionated decisions autonomously. Choose the simplest, most conventional approach." '{
   "hookSpecificOutput": {
-    "permissionDecision": "deny"
-  },
-  "systemMessage": "Quick mode active: do NOT ask the user any questions. Make opinionated decisions autonomously. Choose the simplest, most conventional approach."
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": $reason
+  }
 }'

@@ -6,3 +6,7 @@
 *.pyo
 *.tgz
 *.egg-info/
+specs/.current-spec
+specs/.current-epic
+.claude-loop/
+.claude-loop-*

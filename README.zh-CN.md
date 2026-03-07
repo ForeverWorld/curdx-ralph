@@ -85,6 +85,72 @@ claude --plugin-dir /absolute/path/to/curdx-ralph
 /curdx:implement
 ```
 
+## 中转站过载自动重试
+
+当中转站/上游出现临时错误（例如 `relay: 当前模型负载过高，请稍后重试`）时，使用：
+
+```bash
+bash scripts/claude-auto-retry.sh
+```
+
+常用参数：
+
+- 一直重试，但首次成功后退出：
+
+```bash
+bash scripts/claude-auto-retry.sh --stop-on-success
+```
+
+- 调整退避窗口：
+
+```bash
+bash scripts/claude-auto-retry.sh --min-sleep 5 --max-sleep 300 --jitter-max 3
+```
+
+- 加载内置中转站预设：
+
+```bash
+bash scripts/claude-auto-retry.sh --preset relay-common --preset cn-relay-common
+```
+
+- 加载自定义规则文件（适合团队长期维护）：
+
+```bash
+bash scripts/claude-auto-retry.sh --pattern-file .claude/retry/my-relay.patterns
+```
+
+- 不改脚本代码，直接追加“其他中转站”的可重试错误：
+
+```bash
+bash scripts/claude-auto-retry.sh \
+  --extra-transient "upstream connect error|provider overloaded|upstream timeout"
+```
+
+- 追加不可重试错误（快速失败）：
+
+```bash
+bash scripts/claude-auto-retry.sh \
+  --extra-non-retriable "insufficient quota|account suspended|billing inactive"
+```
+
+也可以用环境变量配置正则：
+
+```bash
+export CLAUDE_RETRY_EXTRA_TRANSIENT_REGEX="gateway not ready|cluster warming up"
+export CLAUDE_RETRY_EXTRA_NON_RETRIABLE_REGEX="tenant disabled|invalid organization"
+bash scripts/claude-auto-retry.sh
+```
+
+规则文件格式（`--pattern-file`）：
+
+```text
+# 注释
+transient: upstream connect error|provider overloaded
+non_retriable: insufficient quota|account suspended
+# 不加前缀默认按 transient 处理
+gateway timeout
+```
+
 ## 命令参考
 
 ### Spec 工作流
@@ -137,10 +203,14 @@ curdx/
 ├── hooks/
 │   ├── hooks.json          # hook 事件注册
 │   └── scripts/            # hook 脚本实现
+├── scripts/
+│   ├── claude-auto-retry.sh # 中转/API 临时错误的持续重试包装脚本
+│   ├── retry-presets/       # 预设与模板规则文件
+│   └── ci/                 # CI 校验脚本
 ├── skills/                 # 可复用技能包
 ├── references/             # 流程参考资料
 ├── templates/              # 生成模板
-└── scripts/ci/             # CI 校验脚本
+└── schemas/                # 结构化 schema
 ```
 
 ## Hook 日志与调试
@@ -177,12 +247,19 @@ python3 hooks/scripts/analyze_hook_logs.py --session <session-id> --since-minute
 
 ## CI 与本地校验
 
-GitHub Actions（`.github/workflows/quality-gates.yml`）会检查：
+GitHub Actions 会执行以下检查：
 
-- hooks 脚本 shell/python 语法
-- 插件清单元数据
-- skills frontmatter
-- markdown 本地链接
+- `.github/workflows/quality-gates.yml`
+  - hooks 脚本 shell/python 语法
+  - hook 行为测试（真实子进程执行，无 mock）
+  - 插件清单元数据
+  - Claude 插件契约校验（hooks 路径完整性、command frontmatter）
+  - skills frontmatter
+  - markdown 本地链接
+  - 本地状态文件误提交防护
+  - workflow 安全硬化规则
+- `.github/workflows/security-scan.yml`
+  - Trivy 漏洞与敏感信息扫描（`CRITICAL,HIGH`）
 
 本地可直接执行：
 
@@ -190,8 +267,12 @@ GitHub Actions（`.github/workflows/quality-gates.yml`）会检查：
 bash -n hooks/scripts/*.sh
 python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py
 python3 scripts/ci/check_plugin_manifest.py
+python3 scripts/ci/check_claude_plugin_contract.py
 python3 scripts/ci/check_skills_frontmatter.py
 python3 scripts/ci/check_local_links.py
+python3 scripts/ci/check_forbidden_files.py
+python3 scripts/ci/check_workflow_hardening.py
+python3 -m unittest discover -s tests/hooks -p 'test_*.py'
 ```
 
 ## 开发说明
@@ -239,5 +320,4 @@ python3 scripts/ci/check_local_links.py
 
 ## License
 
-`.claude-plugin/plugin.json` 当前声明为 `MIT`。
-如果对外分发，建议补充根目录 `LICENSE` 文件以避免歧义。
+MIT 许可证条款见 [LICENSE](./LICENSE)。

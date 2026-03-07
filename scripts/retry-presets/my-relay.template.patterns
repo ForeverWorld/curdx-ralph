@@ -1,0 +1,13 @@
+# Copy this file and customize for your relay.
+# Supported keys:
+#   transient: <regex>
+#   non_retriable: <regex>
+# Lines without key prefix are treated as transient patterns.
+
+transient: relay temporarily overloaded
+transient: upstream connect error
+transient: provider warming up
+
+non_retriable: invalid api key
+non_retriable: insufficient quota
+non_retriable: account suspended

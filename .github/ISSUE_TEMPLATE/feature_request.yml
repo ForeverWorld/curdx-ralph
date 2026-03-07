@@ -1,0 +1,38 @@
+name: "Feature Request"
+description: Propose a new capability or workflow improvement.
+title: "[FEATURE] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the expected behavior and command/workflow impact.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing workaround or other options you considered.
+    validations:
+      required: false
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: How should we verify this works after implementation?
+      placeholder: |
+        - acceptance checks:
+        - affected commands/hooks:
+        - docs updates:
+    validations:
+      required: true
