@@ -193,7 +193,7 @@ bash scripts/mcp-doctor.sh --install-missing
 - `chrome-devtools`
 
 控制台自动化能力：
-- 对 Nacos、RabbitMQ 这类带网页控制台的服务，CURDX 会规划 MCP 浏览器验证任务：
+- 对带网页控制台的服务（如 Nacos、RabbitMQ、Grafana、Keycloak、Jenkins、Argo CD），CURDX 会规划 MCP 浏览器验证任务：
   - 通过 `chrome-devtools-mcp` 登录并配置
   - 再通过 API/CLI 回读验证（不只看 UI）
 

@@ -126,7 +126,7 @@ When `.progress.md` contains `## Reality Check (BEFORE)`, the goal is a fix-type
 > See also: `${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md` for VE placement rules. See `${CLAUDE_PLUGIN_ROOT}/references/coordinator-pattern.md` "VE Task Exception" for cleanup guarantee implementation.
 
 VE tasks provide autonomous end-to-end verification by spinning up real infrastructure (dev servers, browsers, simulators) and testing actual user flows. They follow a 3-task structure: VE1 (startup), VE2 (check), VE3 (cleanup).
-When research.md contains `## Control Panel Targets` (for example Nacos/RabbitMQ), add CP1-CP4 tasks for console login/config + API/CLI verification.
+When research.md contains `## Control Panel Targets`, add CP1-CP4 tasks for console login/config + API/CLI verification.
 
 ### VE Task Format
 

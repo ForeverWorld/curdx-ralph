@@ -280,7 +280,7 @@ When .progress.md contains `## Reality Check (BEFORE)`, the goal is a fix-type a
 
 ## VE Task Generation (E2E Verification)
 
-> See also: `${CLAUDE_PLUGIN_ROOT}/references/quality-checkpoints.md` for VE format details and verify-fix-reverify loop. See `${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md` for VE placement rules within POC and TDD workflows. For web consoles (Nacos/RabbitMQ), also use `${CLAUDE_PLUGIN_ROOT}/references/web-control-panel-ops.md`.
+> See also: `${CLAUDE_PLUGIN_ROOT}/references/quality-checkpoints.md` for VE format details and verify-fix-reverify loop. See `${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md` for VE placement rules within POC and TDD workflows. For web consoles, also use `${CLAUDE_PLUGIN_ROOT}/references/web-control-panel-ops.md`.
 
 <mandatory>
 When generating tasks, include VE (Verify E2E) tasks that spin up real infrastructure and test the built feature end-to-end.
@@ -341,11 +341,11 @@ Generate VE tasks using this 3-task structure (startup, check, cleanup):
 - Max 5 VE tasks per spec: 1 startup + 1-3 checks + 1 cleanup
 - Commands come from research.md "Verification Tooling" section — never hardcode dev server commands or ports
 - If no tooling detected: generate 1 VE task (build + import check) + 1 cleanup (see Library/No-Tooling Fallback)
-- If `## Control Panel Targets` exists in research.md: generate CP tasks for each target service (Nacos/RabbitMQ/etc.)
+- If `## Control Panel Targets` exists in research.md: generate CP tasks for each target service
 
 **Placement**: VE tasks appear after V6 (AC checklist) and before the PR Lifecycle phase (Phase 5 in POC-first workflow, Phase 4 in TDD workflow).
 
-### Control Panel Task Templates (Nacos/RabbitMQ style)
+### Control Panel Task Templates (Generic)
 
 When research.md includes `## Control Panel Targets`, append service-specific [VERIFY] tasks:
 

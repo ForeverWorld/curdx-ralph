@@ -230,7 +230,7 @@ When `.progress.md` contains `## Reality Check (BEFORE)`, the goal is a fix-type
 > See also: `${CLAUDE_PLUGIN_ROOT}/references/quality-checkpoints.md` for VE format details and verify-fix-reverify loop. See `${CLAUDE_PLUGIN_ROOT}/agents/task-planner.md` "VE Task Generation" for VE templates and generation rules.
 
 VE tasks provide autonomous end-to-end verification by spinning up real infrastructure and testing built features against it.
-For services with web control panels (for example Nacos/RabbitMQ), VE includes control-panel configuration tasks via MCP `chrome-devtools`.
+For services with web control panels, VE includes control-panel configuration tasks via MCP `chrome-devtools`.
 
 ### Placement
 

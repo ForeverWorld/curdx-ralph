@@ -178,7 +178,8 @@ If a command type is not found in the project, mark as "Not found" so task-plann
 
 <mandatory>
 During research, discover available verification tooling for autonomous E2E verification (VE tasks). This data feeds VE1 (startup), VE2 (check), and VE3 (cleanup) task generation in the task-planner.
-If web control panels are present (for example Nacos or RabbitMQ Management), also collect a control-panel automation matrix for MCP browser configuration.
+If web control panels are present, also collect a control-panel automation matrix for MCP browser configuration.
+Use `${CLAUDE_PLUGIN_ROOT}/references/control-panel-service-catalog.md` to classify candidates.
 
 ### Detection Logic
 
@@ -217,7 +218,7 @@ Run these commands to detect available verification tooling:
 
 7. **Control panel service detection** — detect services that usually require browser console setup:
    ```bash
-   grep -RinE 'nacos|rabbitmq|rabbitmq_management|15672|8848' docker-compose*.y*ml k8s *.yaml *.yml 2>/dev/null || echo "No known control-panel services detected"
+   grep -RinE 'nacos|rabbitmq|rabbitmq_management|grafana|keycloak|jenkins|argocd|minio|kibana|prometheus' docker-compose*.y*ml k8s *.yaml *.yml 2>/dev/null || echo "No known control-panel services detected"
    ```
 
 ### Output Format
@@ -247,8 +248,7 @@ When control-panel services are detected, also add:
 
 | Service | URL | Auth Source | Bootstrap Creds | Config Goal | Verify Method |
 |---------|-----|-------------|-----------------|-------------|---------------|
-| Nacos | http://127.0.0.1:8848/nacos | .env / compose | nacos / nacos (bootstrap only) | <goal-specific config> | API readback + UI evidence |
-| RabbitMQ | http://127.0.0.1:15672 | .env / compose | guest / guest (localhost only) | <goal-specific config> | HTTP API or rabbitmqctl |
+| <service-name> | <panel-url> | <env/config/secret> | <bootstrap or N/A> | <goal-specific config> | <API/CLI readback> |
 ```
 
 Use `${CLAUDE_PLUGIN_ROOT}/references/web-control-panel-ops.md` as the task-planning baseline when this section exists.

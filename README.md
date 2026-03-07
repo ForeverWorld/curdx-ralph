@@ -194,7 +194,7 @@ Default required servers:
 - `chrome-devtools`
 
 Control-panel automation:
-- For services with web consoles (e.g. Nacos, RabbitMQ), CURDX now plans MCP browser verification tasks:
+- For services with web consoles (e.g. Nacos, RabbitMQ, Grafana, Keycloak, Jenkins, Argo CD), CURDX plans MCP browser verification tasks:
   - login/config through `chrome-devtools-mcp`
   - API/CLI readback verification (not UI-only)
 

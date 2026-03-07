@@ -121,7 +121,7 @@ Follow the full team lifecycle:
 > For VE Tasks — VE1 (startup), VE2 (check), VE3 (cleanup) — generation:
 > - **E2E Verification**: enabled or disabled (from interview response, or auto-enabled in quick mode)
 > - **Verification Tooling**: the Verification Tooling section from research.md (dev server commands, MCP browser readiness, ports, health endpoints)
-> - **Control Panel Targets**: if research.md includes this section (Nacos/RabbitMQ/etc.), generate CP [VERIFY] tasks using chrome-devtools-mcp + API/CLI verification
+> - **Control Panel Targets**: if research.md includes this section, generate CP [VERIFY] tasks using chrome-devtools-mcp + API/CLI verification
 > - **Strategy**: the user's chosen verification strategy, or "auto" in quick mode
 </mandatory>
 
