@@ -37,6 +37,9 @@ jobs:
       - name: Validate Claude plugin contract
         run: python3 scripts/ci/check_claude_plugin_contract.py
 
+      - name: Validate marketplace settings template
+        run: python3 scripts/ci/check_marketplace_settings_template.py
+
       - name: Validate skill frontmatter
         run: python3 scripts/ci/check_skills_frontmatter.py
 

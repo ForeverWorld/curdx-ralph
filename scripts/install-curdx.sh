@@ -28,7 +28,8 @@ What this script does:
 3. Adds CURDX marketplace if missing
 4. Installs `curdx@curdx-marketplace` if not already installed
 5. Enables installed CURDX plugin
-6. Optionally installs required MCP servers
+6. Plugin-level MCP defaults come from `.claude-plugin/.mcp.json`
+7. Optionally installs user/project MCP servers for explicit local entries
 EOF
 }
 

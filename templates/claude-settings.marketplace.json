@@ -1,8 +1,13 @@
 {
-  "extraKnownMarketplaces": [
-    "github:ForeverWorld/curdx-ralph"
-  ],
-  "enabledPlugins": [
-    "curdx@curdx-marketplace"
-  ]
+  "extraKnownMarketplaces": {
+    "curdx-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "ForeverWorld/curdx-ralph"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "curdx@curdx-marketplace": true
+  }
 }

@@ -92,12 +92,17 @@ Add to `.claude/settings.json`:
 
 ```json
 {
-  "extraKnownMarketplaces": [
-    "github:ForeverWorld/curdx-ralph"
-  ],
-  "enabledPlugins": [
-    "curdx@curdx-marketplace"
-  ]
+  "extraKnownMarketplaces": {
+    "curdx-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "ForeverWorld/curdx-ralph"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "curdx@curdx-marketplace": true
+  }
 }
 ```
 
@@ -213,6 +218,10 @@ specs_dirs:
 
 ## MCP Setup
 
+CURDX ships plugin-level MCP server presets in [`.claude-plugin/.mcp.json`](./.claude-plugin/.mcp.json):
+- `context7`
+- `chrome-devtools`
+
 Check MCP readiness:
 
 ```bash
@@ -262,6 +271,7 @@ bash -n hooks/scripts/*.sh scripts/*.sh
 python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py tests/hooks/*.py
 python3 scripts/ci/check_plugin_manifest.py
 python3 scripts/ci/check_claude_plugin_contract.py
+python3 scripts/ci/check_marketplace_settings_template.py
 python3 scripts/ci/check_skills_frontmatter.py
 python3 scripts/ci/check_local_links.py
 python3 scripts/ci/check_forbidden_files.py

@@ -91,12 +91,17 @@ claude plugin validate .
 
 ```json
 {
-  "extraKnownMarketplaces": [
-    "github:ForeverWorld/curdx-ralph"
-  ],
-  "enabledPlugins": [
-    "curdx@curdx-marketplace"
-  ]
+  "extraKnownMarketplaces": {
+    "curdx-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "ForeverWorld/curdx-ralph"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "curdx@curdx-marketplace": true
+  }
 }
 ```
 
@@ -212,6 +217,10 @@ specs_dirs:
 
 ## MCP 配置
 
+CURDX 内置了插件级 MCP 预设，见 [`.claude-plugin/.mcp.json`](./.claude-plugin/.mcp.json)：
+- `context7`
+- `chrome-devtools`
+
 检查 MCP 就绪状态：
 
 ```bash
@@ -261,6 +270,7 @@ bash -n hooks/scripts/*.sh scripts/*.sh
 python3 -m py_compile hooks/scripts/*.py hooks/scripts/_checkers/*.py scripts/ci/*.py tests/hooks/*.py
 python3 scripts/ci/check_plugin_manifest.py
 python3 scripts/ci/check_claude_plugin_contract.py
+python3 scripts/ci/check_marketplace_settings_template.py
 python3 scripts/ci/check_skills_frontmatter.py
 python3 scripts/ci/check_local_links.py
 python3 scripts/ci/check_forbidden_files.py

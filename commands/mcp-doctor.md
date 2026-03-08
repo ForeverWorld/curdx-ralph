@@ -8,6 +8,9 @@ allowed-tools: [Bash, Read]
 
 Diagnose MCP readiness for CURDX and optionally auto-install missing servers.
 
+Note: CURDX also ships plugin-level defaults in `.claude-plugin/.mcp.json`.
+Use this command when host prerequisites are missing or you want explicit user/project MCP entries.
+
 Default required servers:
 - `context7`
 - `chrome-devtools`
